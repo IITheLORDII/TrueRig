@@ -99,7 +99,8 @@ class _PricesPageState extends ConsumerState<PricesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: _query.isEmpty
+        // Catalog products have their own close button on the card.
+        leading: _query.isEmpty || match != null
             ? null
             : IconButton(
                 tooltip: 'Ürünü kapat',
@@ -133,7 +134,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
             _RecentSearches(onPick: _setQuery),
             _BuildShortcuts(pcBuild: build, onPick: _setQuery),
           ] else ...[
-            if (match != null) _MatchCard(part: match),
+            if (match != null) _MatchCard(part: match, onClose: _clear),
             const SizedBox(height: 12),
             StoreList(query: query, showImage: match == null),
           ],
@@ -248,49 +249,67 @@ class _BuildShortcuts extends ConsumerWidget {
 }
 
 class _MatchCard extends ConsumerWidget {
-  const _MatchCard({required this.part});
+  const _MatchCard({required this.part, required this.onClose});
 
   final Part part;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final muted = Theme.of(context).textTheme.labelMedium
         ?.copyWith(color: context.palette.muted);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            PartThumb(
-              imageUrl: ref.watch(partImageProvider(part)),
-              fallbackIcon: part.category.icon,
-              size: 88,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 44, 16),
+            child: _body(context, ref, muted),
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IconButton(
+              tooltip: 'Seçimi kaldır',
+              icon: const Icon(Icons.close_rounded),
+              onPressed: onClose,
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    part.displayName,
-                    style: Theme.of(context).textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(partSubtitle(part)),
-                  if (part.mpn != null) Text('MPN: ${part.mpn}', style: muted),
-                  if (part.refPriceUsd != null && part.refPriceUsd! > 0)
-                    Text(
-                      'Referans fiyat: ~\$${part.refPriceUsd!.toStringAsFixed(0)}',
-                      style: muted,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _body(BuildContext context, WidgetRef ref, TextStyle? muted) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        PartThumb(
+          imageUrl: ref.watch(partImageProvider(part)),
+          fallbackIcon: part.category.icon,
+          size: 88,
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                part.displayName,
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 4),
+              Text(partSubtitle(part)),
+              if (part.mpn != null) Text('MPN: ${part.mpn}', style: muted),
+              if (part.refPriceUsd != null && part.refPriceUsd! > 0)
+                Text(
+                  'Referans fiyat: ~\$${part.refPriceUsd!.toStringAsFixed(0)}',
+                  style: muted,
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

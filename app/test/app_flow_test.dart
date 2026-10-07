@@ -183,10 +183,10 @@ void main() {
     expect(find.text('NVIDIA GeForce RTX 4070 Super'), findsOneWidget);
     expect(find.text('Akakçe'), findsOneWidget);
 
-    // Top-left close button dismisses the product.
-    await tap(tester, find.byTooltip('Ürünü kapat'));
+    // The close button on the product card clears the selection.
+    await tap(tester, find.byTooltip('Seçimi kaldır'));
     expect(find.text('NVIDIA GeForce RTX 4070 Super'), findsNothing);
-    expect(find.byTooltip('Ürünü kapat'), findsNothing);
+    expect(find.byTooltip('Seçimi kaldır'), findsNothing);
     expect(find.text('SON ARAMALAR'), findsOneWidget);
     expect(find.text('rtx 4070 super'), findsOneWidget);
   });
