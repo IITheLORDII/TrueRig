@@ -36,6 +36,7 @@ class PriceOffer {
     required this.fetchedAt,
     this.rating,
     this.reviewCount,
+    this.title,
   });
 
   factory PriceOffer.fromJson(Map<String, dynamic> j) => PriceOffer(
@@ -47,6 +48,7 @@ class PriceOffer {
     fetchedAt: DateTime.parse(j['fetched_at'] as String),
     rating: (j['rating'] as num?)?.toDouble(),
     reviewCount: (j['review_count'] as num?)?.toInt(),
+    title: j['title'] as String?,
   );
 
   final String store;
@@ -59,6 +61,9 @@ class PriceOffer {
   /// 0..5 stars from the store page, when published.
   final double? rating;
   final int? reviewCount;
+
+  /// Product title on the store page (the exact configuration).
+  final String? title;
 }
 
 class PriceApiException implements Exception {
@@ -136,6 +141,8 @@ class PriceSearchResult {
     required this.offers,
     this.imageUrl,
     this.imageSource,
+    this.estimateTry,
+    this.updatedAt,
   });
 
   static const empty = PriceSearchResult(offers: []);
@@ -146,6 +153,12 @@ class PriceSearchResult {
 
   /// Page the image was taken from (shown as attribution).
   final Uri? imageSource;
+
+  /// List price × today's USD/TRY rate, when no store price is known.
+  final double? estimateTry;
+
+  /// When the prices were read from the stores.
+  final DateTime? updatedAt;
 
   /// Mean price of in-stock offers without outliers (null when none).
   double? get averagePrice {

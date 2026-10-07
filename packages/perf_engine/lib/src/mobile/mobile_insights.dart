@@ -71,8 +71,7 @@ class PhoneInsightEstimator {
     final hz = _refreshFactor(phone.displayHz);
     final summary = estimator.summarize(spec);
 
-    final base =
-        phone.platform == MobilePlatform.ios ? _iosBase : _androidBase;
+    final base = phone.platform == MobilePlatform.ios ? _iosBase : _androidBase;
     final untilYear = _baseYear + (phone.maxOsMajor - base);
 
     final c = summary.components;

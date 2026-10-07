@@ -9,6 +9,9 @@ import 'package:darbogaz/app.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
+import 'package:darbogaz/features/prices/store_list.dart';
+
+import 'support.dart' show FakePriceRepository;
 
 Future<SharedPreferences> _prefs(Map<String, Object> values) async {
   SharedPreferences.setMockInitialValues(values);
@@ -25,6 +28,7 @@ Future<void> _pump(WidgetTester tester, SharedPreferences prefs) async {
       overrides: [
         prefsProvider.overrideWithValue(prefs),
         selfDeviceIdProvider.overrideWith((ref) async => null),
+        priceRepositoryProvider.overrideWithValue(const FakePriceRepository()),
       ],
       child: const DarbogazApp(),
     ),
@@ -143,10 +147,7 @@ void main() {
     await _search(tester, 'RTX 4070 Super');
     await _tap(tester, find.text('NVIDIA GeForce RTX 4070 Super'));
 
-    expect(
-      find.text('Ryzen 7 7800X3D + GeForce RTX 4070 Super'),
-      findsWidgets,
-    );
+    expect(find.text('Ryzen 7 7800X3D + GeForce RTX 4070 Super'), findsWidgets);
     expect(find.text('Mağazalarda ortalama fiyat'), findsOneWidget);
     expect(find.textContaining('Oyun FPS'), findsOneWidget);
     expect(find.text('Cyberpunk 2077'), findsOneWidget);

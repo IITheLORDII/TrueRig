@@ -38,9 +38,7 @@ Future<void> pickSandboxPrebuilt(
   WidgetRef ref,
   int slot,
 ) async {
-  final picked = await context.push<PickedSystem>(
-    '/pick/prebuilt?mode=return',
-  );
+  final picked = await context.push<PickedSystem>('/pick/prebuilt?mode=return');
   if (picked == null) return;
   ref
       .read(sandboxProvider.notifier)

@@ -9,10 +9,15 @@ import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
+import 'package:darbogaz/features/prices/price_index.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
 
+/// Daily published index (always on) plus the live service when deployed.
 final priceRepositoryProvider = Provider<PriceRepository>(
-  (ref) => RemotePriceRepository(),
+  (ref) => CombinedPriceRepository([
+    IndexPriceRepository(),
+    RemotePriceRepository(),
+  ]),
 );
 
 /// Live search; an MPN-matched image is remembered for the whole session so
@@ -158,11 +163,20 @@ class _StoreListState extends ConsumerState<StoreList> {
         : null;
     final result = async?.value;
     final loading = async?.isLoading ?? false;
-    final rows = mergeStores(
-      storeSearchLinks(widget.query),
-      result,
-      _sort,
-    );
+    final rows = mergeStores(storeSearchLinks(widget.query), result, _sort);
+    final priced = [
+      for (final r in rows)
+        if (r.offer != null) r,
+    ];
+    final unpriced = [
+      for (final r in rows)
+        if (r.offer == null) r,
+    ]..sort((a, b) => a.store.toLowerCase().compareTo(b.store.toLowerCase()));
+    final at = result?.updatedAt?.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final updated = at == null
+        ? null
+        : '${two(at.day)}.${two(at.month)} ${two(at.hour)}:${two(at.minute)}';
     final palette = context.palette;
     final theme = Theme.of(context);
     final muted = theme.textTheme.labelSmall?.copyWith(color: palette.muted);
@@ -206,6 +220,15 @@ class _StoreListState extends ConsumerState<StoreList> {
                 '(${cheapest.store}) · ${result!.offers.length} teklif',
                 style: theme.textTheme.labelMedium,
               ),
+            )
+          else if (result?.estimateTry != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: Space.xs),
+              child: Text(
+                'Tahmini piyasa fiyatı ~${formatPrice(result!.estimateTry!, 'TRY')} '
+                '(liste fiyatı × bugünkü kur)',
+                style: theme.textTheme.labelMedium,
+              ),
             ),
           if (async?.hasError ?? false)
             Text(
@@ -214,17 +237,36 @@ class _StoreListState extends ConsumerState<StoreList> {
                   : 'Fiyatlar alınamadı.',
               style: TextStyle(color: palette.bad),
             ),
-          for (final r in rows)
-            _StoreTile(row: r, loading: loading && r.offer == null),
+          for (final r in priced) _StoreTile(row: r, loading: false),
+          if (loading && priced.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: Space.s),
+              child: Column(children: [SkeletonBar(), SkeletonBar(width: 220)]),
+            ),
+          if (unpriced.isNotEmpty) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: Space.s),
+              child: Text(
+                priced.isEmpty
+                    ? 'Bu ürün için otomatik fiyat bulunamadı; mağazada ara:'
+                    : 'Diğer mağazalar (fiyatı otomatik okunamıyor)',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: palette.muted,
+                ),
+              ),
+            ),
+            for (final r in unpriced) _StoreTile(row: r, loading: false),
+          ],
           const SizedBox(height: Space.xs),
           Text(
-            configured
-                ? 'Fiyatlar mağazaların herkese açık sayfalarından okunur ve '
-                      '6 saate kadar gecikebilir. Fiyatı olmayan mağazada '
-                      'dokununca arama sonucu açılır.'
-                      '${result?.imageSource != null ? ' Görsel: ${result!.imageSource!.host}' : ''}'
-                : 'Canlı fiyatlar fiyat servisi bağlanınca burada görünür; '
-                      'şimdilik dokununca mağazanın arama sonucu açılır.',
+            [
+              'Fiyatlar her gün mağazaların botlara açık ürün sayfalarından '
+                  'otomatik okunur; arama sayfaları ve bot koruması olan '
+                  'mağazalar okunmaz.',
+              if (updated != null) 'Son güncelleme: $updated.',
+              if (result?.imageSource != null)
+                'Görsel: ${result!.imageSource!.host}',
+            ].join(' '),
             style: muted,
           ),
         ],
@@ -245,6 +287,7 @@ class _StoreTile extends StatelessWidget {
     final theme = Theme.of(context);
     final o = row.offer;
     final details = [
+      if (o?.title != null) o!.title!,
       if (row.region != null) row.region!,
       if (o != null) o.inStock ? 'Stokta' : 'Stokta yok',
       if (row.outlier) 'olağan dışı fiyat',
@@ -280,15 +323,14 @@ class _StoreTile extends StatelessWidget {
           ? null
           : Text(
               details.join(' · '),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: row.outlier ? TextStyle(color: palette.warn) : null,
             ),
       trailing: loading
           ? const SizedBox(width: 72, child: SkeletonBar(width: 72))
           : o == null
-          ? Text(
-              'Fiyatı gör ›',
-              style: TextStyle(color: theme.colorScheme.primary),
-            )
+          ? Icon(Icons.open_in_new_rounded, size: 18, color: palette.muted)
           : Text(
               formatPrice(o.price, o.currency),
               style: numberStyle(
@@ -305,8 +347,7 @@ class _StoreTile extends StatelessWidget {
 Future<void> openStoreUrl(BuildContext context, Uri url) async {
   final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Bağlantı açılamadı.')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Bağlantı açılamadı.')));
   }
 }

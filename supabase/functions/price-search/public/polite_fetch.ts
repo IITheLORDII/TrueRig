@@ -16,6 +16,8 @@ export interface FetchDeps {
   /** Returns false when the host's hourly request budget is used up. */
   takeBudget: (host: string) => Promise<boolean>;
   userAgent: string;
+  /** Extra per-host spacing on top of robots Crawl-delay (optional). */
+  minDelayMs?: (host: string) => number;
 }
 
 export type FetchOutcome =
@@ -78,9 +80,12 @@ export class PoliteFetcher {
   }
 
   private async waitTurn(host: string, rules: RobotsRules): Promise<void> {
-    const delay = Math.min(
-      MAX_DELAY_MS,
-      rules.crawlDelaySec !== null ? rules.crawlDelaySec * 1000 : DEFAULT_DELAY_MS,
+    const delay = Math.max(
+      this.deps.minDelayMs?.(host) ?? 0,
+      Math.min(
+        MAX_DELAY_MS,
+        rules.crawlDelaySec !== null ? rules.crawlDelaySec * 1000 : DEFAULT_DELAY_MS,
+      ),
     );
     const last = this.lastHit.get(host);
     const wait = last === undefined ? 0 : last + delay - this.deps.now();

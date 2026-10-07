@@ -276,3 +276,22 @@ describe("ratingOf", () => {
     assert.deepEqual(ratingOf({ ratingValue: 0 }), { rating: null, reviewCount: null });
   });
 });
+
+describe("nested JSON-LD", () => {
+  test("Product inside a BuyAction is found (MediaMarkt)", () => {
+    const html = `<script data-rh="true" type="application/ld+json">${JSON.stringify({
+      "@context": "https://schema.org/",
+      "@type": "BuyAction",
+      object: {
+        "@type": "Product",
+        name: "HP Victus 15 RTX4060",
+        gtin13: "0757279207455",
+        offers: { "@type": "Offer", price: 42999, priceCurrency: "TRY" },
+      },
+    })}</script>`;
+    const p = extractPageData(html, "https://www.mediamarkt.com.tr/tr/product/_x.html").products;
+    assert.equal(p.length, 1);
+    assert.equal(p[0].price, 42999);
+    assert.equal(p[0].gtin, "0757279207455");
+  });
+});

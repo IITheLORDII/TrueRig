@@ -67,17 +67,20 @@ export function extractPageData(html: string, pageUrl: string): PageData {
   return { products, listedUrls: [...new Set(listedUrls)] };
 }
 
-function collect(value: unknown, out: Json[]): void {
+/**
+ * Every object in the JSON-LD tree. Stores nest Products in @graph, in
+ * ItemList entries or inside actions (MediaMarkt: BuyAction.object).
+ */
+function collect(value: unknown, out: Json[], depth = 0): void {
+  if (depth > 12) return;
   if (Array.isArray(value)) {
-    for (const v of value) collect(v, out);
+    for (const v of value) collect(v, out, depth + 1);
     return;
   }
   if (!isObj(value)) return;
   out.push(value);
-  if (Array.isArray(value["@graph"])) collect(value["@graph"], out);
-  // ItemList entries may embed full Product objects.
-  for (const el of asArray(value.itemListElement)) {
-    if (isObj(el) && isObj(el.item)) collect(el.item, out);
+  for (const v of Object.values(value)) {
+    if (typeof v === "object" && v !== null) collect(v, out, depth + 1);
   }
 }
 

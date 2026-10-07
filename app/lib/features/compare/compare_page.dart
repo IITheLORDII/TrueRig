@@ -206,9 +206,8 @@ class _ComparePageState extends ConsumerState<ComparePage> {
             ],
             Text(
               kEstimateDisclaimer,
-              style: Theme.of(
-                context,
-              ).textTheme.labelSmall?.copyWith(color: context.palette.muted),
+              style: Theme.of(context).textTheme.labelSmall
+                  ?.copyWith(color: context.palette.muted),
             ),
           ],
         ],

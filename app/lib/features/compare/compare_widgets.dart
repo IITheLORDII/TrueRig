@@ -90,10 +90,7 @@ class SideCard extends StatelessWidget {
                 ],
               ),
               if (onTap != null && !highlight)
-                Text(
-                  'Değiştir',
-                  style: TextStyle(color: color, fontSize: 12),
-                ),
+                Text('Değiştir', style: TextStyle(color: color, fontSize: 12)),
             ],
           ),
         ),
@@ -155,9 +152,15 @@ class VerdictCard extends StatelessWidget {
                     Expanded(child: ColoredBox(color: context.palette.muted))
                   else ...[
                     if (a > 0)
-                      Expanded(flex: a, child: ColoredBox(color: mineColor)),
+                      Expanded(
+                        flex: a,
+                        child: ColoredBox(color: mineColor),
+                      ),
                     if (b > 0)
-                      Expanded(flex: b, child: ColoredBox(color: otherColor)),
+                      Expanded(
+                        flex: b,
+                        child: ColoredBox(color: otherColor),
+                      ),
                   ],
                 ],
               ),
@@ -176,9 +179,7 @@ class VerdictCard extends StatelessWidget {
               ),
               Text(
                 'Diğeri: $b başlıkta önde',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: otherColor,
-                ),
+                style: theme.textTheme.labelMedium?.copyWith(color: otherColor),
               ),
             ],
           ),

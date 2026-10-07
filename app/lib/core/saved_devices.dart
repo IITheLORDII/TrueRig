@@ -224,11 +224,7 @@ class SavedDevicesController extends Notifier<SavedDevices> {
           if (phone == null) {
             ctl.clear();
           } else {
-            ctl.select(
-              phone,
-              socId: d.data[1],
-              ramGb: int.tryParse(d.data[2]),
-            );
+            ctl.select(phone, socId: d.data[1], ramGb: int.tryParse(d.data[2]));
           }
         case DeviceKind.watch:
           final catalog = ref.read(mobileCatalogProvider);

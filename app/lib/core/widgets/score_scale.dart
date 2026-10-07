@@ -5,7 +5,11 @@ import 'package:darbogaz/core/theme/tokens.dart';
 
 /// One coloured band of a [ScoreScale].
 class ScaleZone {
-  const ScaleZone({required this.until, required this.label, required this.color});
+  const ScaleZone({
+    required this.until,
+    required this.label,
+    required this.color,
+  });
 
   /// Upper end of the zone on the scale.
   final double until;
@@ -62,7 +66,8 @@ class ScoreScale extends StatelessWidget {
         ScaleZone(until: 75, label: 'Orta', color: p.warn),
         ScaleZone(until: 110, label: 'Güvenli', color: p.good),
       ],
-      caption: '75+ güvenli · 50–75 orta · 50 altı aşırı darboğaz '
+      caption:
+          '75+ güvenli · 50–75 orta · 50 altı aşırı darboğaz '
           '(puan yükseldikçe darboğaz azalır)',
     );
   }
@@ -99,10 +104,13 @@ class ScoreScale extends StatelessWidget {
                           children: [
                             for (var i = 0; i < zones.length; i++)
                               Expanded(
-                                flex: ((zones[i].until -
-                                            (i == 0 ? min : zones[i - 1].until)) *
-                                        10)
-                                    .round(),
+                                flex:
+                                    ((zones[i].until -
+                                                (i == 0
+                                                    ? min
+                                                    : zones[i - 1].until)) *
+                                            10)
+                                        .round(),
                                 child: ColoredBox(
                                   color: zones[i].color.withValues(
                                     alpha: zones[i] == zone ? 1 : 0.35,

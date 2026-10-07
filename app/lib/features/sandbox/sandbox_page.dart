@@ -141,9 +141,7 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
               ],
             ),
           ),
-          Expanded(
-            child: s.comparing ? _compare(s) : _single(s),
-          ),
+          Expanded(child: s.comparing ? _compare(s) : _single(s)),
         ],
       ),
     );
@@ -222,9 +220,8 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
                   padding: const EdgeInsets.only(top: Space.xs),
                   child: Text(
                     note,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: context.palette.warn,
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: context.palette.warn),
                   ),
                 ),
               if (child != null) ...[
@@ -240,7 +237,8 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
           ),
         ),
         Expanded(
-          child: child ??
+          child:
+              child ??
               const EmptyHint(
                 icon: Icons.travel_explore_rounded,
                 message: 'Katalogdaki modellerden birini seç ve incele.',
@@ -253,27 +251,31 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
   // ----------------------------------------------------------- compare --
 
   Widget _compare(SandboxState s) {
-    final (String? a, String? b, VoidCallback pickA, VoidCallback pickB) =
-        switch (s.kind) {
-          DeviceKind.pc => (
-            s.pcs[0].name,
-            s.pcs[1].name,
-            () => _pickPcSlot(0),
-            () => _pickPcSlot(1),
-          ),
-          DeviceKind.phone => (
-            s.phones[0]?.displayName,
-            s.phones[1]?.displayName,
-            () => _pickPhone(0),
-            () => _pickPhone(1),
-          ),
-          DeviceKind.watch => (
-            s.watches[0]?.displayName,
-            s.watches[1]?.displayName,
-            () => _pickWatch(0),
-            () => _pickWatch(1),
-          ),
-        };
+    final (
+      String? a,
+      String? b,
+      VoidCallback pickA,
+      VoidCallback pickB,
+    ) = switch (s.kind) {
+      DeviceKind.pc => (
+        s.pcs[0].name,
+        s.pcs[1].name,
+        () => _pickPcSlot(0),
+        () => _pickPcSlot(1),
+      ),
+      DeviceKind.phone => (
+        s.phones[0]?.displayName,
+        s.phones[1]?.displayName,
+        () => _pickPhone(0),
+        () => _pickPhone(1),
+      ),
+      DeviceKind.watch => (
+        s.watches[0]?.displayName,
+        s.watches[1]?.displayName,
+        () => _pickWatch(0),
+        () => _pickWatch(1),
+      ),
+    };
     final sections = _sections(s);
     final editing = _editing;
 

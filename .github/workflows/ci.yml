@@ -26,7 +26,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node --test "supabase/functions/price-search/test/*.test.ts"
+      - run: node --test "supabase/functions/price-search/test/*.test.ts" "tool/price-index/test/*.test.ts"
 
   app:
     runs-on: ubuntu-latest

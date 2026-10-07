@@ -90,13 +90,14 @@ class SavedDevicesCard extends ConsumerWidget {
     final ctl = ref.read(savedDevicesProvider.notifier);
     final text = [
       '$kAppName cihazlarım:',
-      for (final r in rows) '• ${r.kind.label}: ${ctl.labelOf(r.kind, r.index)}',
+      for (final r in rows)
+        '• ${r.kind.label}: ${ctl.labelOf(r.kind, r.index)}',
     ].join('\n');
     await Clipboard.setData(ClipboardData(text: text));
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Liste panoya kopyalandı.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Liste panoya kopyalandı.')));
     }
   }
 }

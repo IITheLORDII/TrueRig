@@ -1,0 +1,63 @@
+name: Price index
+
+# Once a day: read prices from store product pages that robots.txt allows
+# (found via the stores' sitemaps) and publish prices.json on the
+# `prices-data` branch, where the app downloads it.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: Product pages per store
+        default: "300"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: price-index
+  cancel-in-progress: false
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dart-lang/setup-dart@v1
+      - name: Catalog items
+        working-directory: packages/perf_engine
+        run: |
+          dart pub get
+          dart run tool/export_price_items.dart > "$RUNNER_TEMP/items.json"
+
+      - name: Previous index
+        run: |
+          git show origin/prices-data:prices.json > "$RUNNER_TEMP/previous.json" 2>/dev/null \
+            || echo '{}' > "$RUNNER_TEMP/previous.json"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Crawl
+        run: |
+          node --experimental-strip-types tool/price-index/run.ts \
+            --items "$RUNNER_TEMP/items.json" \
+            --previous "$RUNNER_TEMP/previous.json" \
+            --out "$RUNNER_TEMP/prices.json" \
+            --limit "${{ github.event.inputs.limit || '300' }}"
+
+      - name: Publish
+        run: |
+          git config user.name "truerig-price-bot"
+          git config user.email "truerig-price-bot@users.noreply.github.com"
+          git worktree add --orphan -b publish "$RUNNER_TEMP/publish"
+          cp "$RUNNER_TEMP/prices.json" "$RUNNER_TEMP/publish/prices.json"
+          cd "$RUNNER_TEMP/publish"
+          git add prices.json
+          git commit -m "data: price index $(date -u +%Y-%m-%d)"
+          git push --force origin HEAD:prices-data

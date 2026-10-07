@@ -36,8 +36,8 @@ void main() {
     test('G770 covers older generations and the GTX 1650 models', () {
       final g770 = kPrebuilts.firstWhere((s) => s.id == 'casper-g770');
       final cpus = g770.variants.map((v) => v.cpuId).toSet();
-      expect(cpus, containsAll(['i5-10300h', 'i5-11400h', 'i5-12450h',
-          'i7-13700h']));
+      expect(cpus,
+          containsAll(['i5-10300h', 'i5-11400h', 'i5-12450h', 'i7-13700h']));
       expect(g770.variants.where((v) => v.gpuId == 'gtx-1650-laptop'),
           hasLength(greaterThanOrEqualTo(2)));
       expect(g770.variants.every((v) => v.year != null), isTrue);

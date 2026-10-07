@@ -7,6 +7,8 @@ import 'package:darbogaz/app.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
+import 'package:darbogaz/features/prices/price_repository.dart';
+import 'package:darbogaz/features/prices/store_list.dart';
 
 Future<SharedPreferences> prefsWith(Map<String, Object> values) async {
   SharedPreferences.setMockInitialValues(values);
@@ -20,6 +22,7 @@ Future<void> pumpApp(
   SharedPreferences? prefs,
   String? selfId,
   BuildController Function()? build,
+  PriceRepository? prices,
 }) async {
   tester.view.physicalSize = const Size(430, 2000);
   tester.view.devicePixelRatio = 1;
@@ -30,6 +33,9 @@ Future<void> pumpApp(
         selfDeviceIdProvider.overrideWith((ref) async => selfId),
         prefsProvider.overrideWithValue(prefs ?? await prefsWith({})),
         if (build != null) buildProvider.overrideWith(build),
+        priceRepositoryProvider.overrideWithValue(
+          prices ?? const FakePriceRepository(),
+        ),
       ],
       child: const DarbogazApp(),
     ),
@@ -55,4 +61,17 @@ Future<void> openTab(WidgetTester tester, String label) => tap(
 Future<void> search(WidgetTester tester, String text) async {
   await tester.enterText(find.byType(TextField).first, text);
   await tester.pumpAndSettle();
+}
+
+/// Price source for widget tests (no network).
+class FakePriceRepository implements PriceRepository {
+  const FakePriceRepository([this.result = PriceSearchResult.empty]);
+
+  final PriceSearchResult result;
+
+  @override
+  bool get isConfigured => true;
+
+  @override
+  Future<PriceSearchResult> search(String query) async => result;
 }
