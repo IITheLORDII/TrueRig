@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:perf_engine/src/bottleneck/system_bottleneck.dart';
 import 'package:perf_engine/src/compatibility/compatibility_checker.dart';
 import 'package:perf_engine/src/data/part_catalog.dart';
 import 'package:perf_engine/src/fps/fps_estimator.dart';
@@ -124,6 +127,73 @@ class UpgradeAdvisor {
     );
   }
 
+  /// Game-independent advice: candidates are ranked by the average FPS gain
+  /// over the general game library (geometric mean of FPS ratios).
+  GeneralUpgradeAdvice adviseGeneral({
+    required PcBuild build,
+    required PartCatalog catalog,
+    Resolution resolution = Resolution.p1080,
+    GraphicsPreset preset = GraphicsPreset.high,
+    int limit = 5,
+  }) {
+    final cpu = build.cpu;
+    final gpu = build.gpu;
+    if (cpu == null || gpu == null) {
+      throw ArgumentError('Upgrade advice needs both a CPU and a GPU.');
+    }
+    final analyzer = SystemBottleneckAnalyzer(fps: fps);
+    SystemBottleneck run(PcBuild b) => analyzer.analyze(
+          cpu: b.cpu!,
+          gpu: b.gpu!,
+          ram: b.ram,
+          resolution: resolution,
+          preset: preset,
+        );
+    final current = run(build);
+
+    final candidates = <Part>[
+      if (current.limiter != Limiter.gpu)
+        ...catalog.cpus.where((c) => _cpuFits(c, build)),
+      if (current.limiter != Limiter.cpu)
+        ...catalog.gpus.where((g) => _gpuFits(g, build)),
+    ].where((p) => p.refPriceUsd != null && p.refPriceUsd! > 0);
+
+    final options = <GeneralUpgradeOption>[];
+    for (final part in candidates) {
+      final next = build.withPart(part);
+      final after = run(next);
+      var logGain = 0.0;
+      for (var i = 0; i < after.perGame.length; i++) {
+        logGain += math.log(
+          after.perGame[i].avgFps / current.perGame[i].avgFps,
+        );
+      }
+      final gainPct = (math.exp(logGain / after.perGame.length) - 1) * 100;
+      if (gainPct < kMinUsefulGainPercent) continue;
+      final load = CompatibilityChecker.estimatedLoadW(next) ?? 0;
+      options.add(GeneralUpgradeOption(
+        part: part,
+        gainPercent: gainPct,
+        after: after,
+        needsPsuUpgrade: build.psu != null && build.psu!.watts < load,
+      ));
+    }
+    options.sort((a, b) {
+      final cmp = b.gainPer100Usd.compareTo(a.gainPer100Usd);
+      return cmp != 0 ? cmp : b.gainPercent.compareTo(a.gainPercent);
+    });
+
+    final worstVram =
+        current.perGame.map((e) => e.vramShortfallGb).fold<double>(0, math.max);
+    return GeneralUpgradeAdvice(
+      current: current,
+      options: List.unmodifiable(options.take(limit)),
+      freeTips: List.unmodifiable(
+        _tips(build, current.limiter, resolution, preset, worstVram),
+      ),
+    );
+  }
+
   static int _byValue(UpgradeOption a, UpgradeOption b) {
     final va = a.fpsPer100Usd ?? 0;
     final vb = b.fpsPer100Usd ?? 0;
@@ -151,19 +221,29 @@ class UpgradeAdvisor {
     return pcCase == null || g.lengthMm <= pcCase.maxGpuLengthMm;
   }
 
-  List<String> _freeTips(PcBuild b, FpsEstimate e) => [
+  List<String> _freeTips(PcBuild b, FpsEstimate e) =>
+      _tips(b, e.limiter, e.resolution, e.preset, e.vramShortfallGb);
+
+  List<String> _tips(
+    PcBuild b,
+    Limiter limiter,
+    Resolution resolution,
+    GraphicsPreset preset,
+    double vramShortfallGb,
+  ) =>
+      [
         if (isLaptopGpu(b.gpu!) || isSolderedCpu(b.cpu!))
           'Dizüstü bilgisayarlarda işlemci ve ekran kartı değiştirilemez. '
               "Şarj aletini takıp performans modunu seçmek ve RAM'i çift "
               'kanala çıkarmak en etkili iyileştirmedir.',
-        if (e.limiter == Limiter.cpu && e.resolution == Resolution.p1080)
+        if (limiter == Limiter.cpu && resolution == Resolution.p1080)
           'İşlemci darboğazı var: çözünürlüğü 1440p\'ye veya ayarları '
               'yükseltmek FPS\'i neredeyse hiç düşürmeden görüntüyü iyileştirir.',
-        if (e.limiter == Limiter.gpu && e.preset != GraphicsPreset.low)
+        if (limiter == Limiter.gpu && preset != GraphicsPreset.low)
           'Ekran kartı darboğazı var: DLSS/FSR/XeSS "Kalite" modu ya da bir '
               'kademe düşük ayar %20-40 FPS kazandırır.',
-        if (e.vramShortfallGb > 0)
-          'VRAM yetersiz (${e.vramShortfallGb.toStringAsFixed(1)} GB eksik): '
+        if (vramShortfallGb > 0)
+          'VRAM yetersiz (${vramShortfallGb.toStringAsFixed(1)} GB eksik): '
               'doku kalitesini bir kademe düşürün, takılmalar azalır.',
         if (b.ram != null && b.ram!.moduleCount == 1)
           'Tek RAM modülü var: aynı modülden bir tane daha takıp çift kanala '
@@ -184,3 +264,33 @@ bool isSolderedCpu(Cpu c) =>
 
 /// Laptop GPUs are modelled with length 0 (built into the chassis).
 bool isLaptopGpu(Gpu g) => g.lengthMm == 0;
+
+class GeneralUpgradeOption {
+  const GeneralUpgradeOption({
+    required this.part,
+    required this.gainPercent,
+    required this.after,
+    required this.needsPsuUpgrade,
+  });
+
+  final Part part;
+
+  /// Average FPS gain over the game library.
+  final double gainPercent;
+  final SystemBottleneck after;
+  final bool needsPsuUpgrade;
+
+  double get gainPer100Usd => gainPercent / part.refPriceUsd! * 100;
+}
+
+class GeneralUpgradeAdvice {
+  const GeneralUpgradeAdvice({
+    required this.current,
+    required this.options,
+    required this.freeTips,
+  });
+
+  final SystemBottleneck current;
+  final List<GeneralUpgradeOption> options;
+  final List<String> freeTips;
+}

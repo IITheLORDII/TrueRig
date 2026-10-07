@@ -119,16 +119,42 @@ final fpsEstimateProvider = Provider<FpsEstimate?>((ref) {
   );
 });
 
-final upgradeAdviceProvider = Provider<UpgradeAdvice?>((ref) {
+/// General (game-independent) bottleneck at the chosen resolution, High
+/// preset; null until CPU and GPU are chosen.
+final generalBottleneckProvider = Provider<SystemBottleneck?>((ref) {
+  final build = ref.watch(buildProvider);
+  final cpu = build.cpu;
+  final gpu = build.gpu;
+  if (cpu == null || gpu == null) return null;
+  return const SystemBottleneckAnalyzer().analyze(
+    cpu: cpu,
+    gpu: gpu,
+    ram: build.ram,
+    resolution: ref.watch(analysisSettingsProvider).resolution,
+  );
+});
+
+/// General bottleneck at 1080p / 1440p / 4K.
+final bottleneckByResolutionProvider = Provider<List<SystemBottleneck>?>((ref) {
+  final build = ref.watch(buildProvider);
+  final cpu = build.cpu;
+  final gpu = build.gpu;
+  if (cpu == null || gpu == null) return null;
+  return const SystemBottleneckAnalyzer().byResolution(
+    cpu: cpu,
+    gpu: gpu,
+    ram: build.ram,
+  );
+});
+
+/// Upgrade suggestions ranked by average gain over the game library.
+final generalAdviceProvider = Provider<GeneralUpgradeAdvice?>((ref) {
   final build = ref.watch(buildProvider);
   if (build.cpu == null || build.gpu == null) return null;
-  final s = ref.watch(analysisSettingsProvider);
-  return const UpgradeAdvisor().advise(
+  return const UpgradeAdvisor().adviseGeneral(
     build: build,
     catalog: ref.watch(catalogProvider),
-    game: s.game,
-    resolution: s.resolution,
-    preset: s.preset,
+    resolution: ref.watch(analysisSettingsProvider).resolution,
   );
 });
 

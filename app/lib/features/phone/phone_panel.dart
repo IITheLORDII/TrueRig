@@ -7,6 +7,7 @@ import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
+import 'package:darbogaz/features/watch/pairing_card.dart';
 
 /// Phone selection shown in the "Cihaz" tab.
 class PhonePanel extends ConsumerWidget {
@@ -37,8 +38,11 @@ class PhonePanel extends ConsumerWidget {
               label: const Text('Telefon seç'),
             ),
           )
-        else
+        else ...[
           _SelectedPhoneCard(spec: spec),
+          const SizedBox(height: 8),
+          const PairingCard(),
+        ],
       ],
     );
   }

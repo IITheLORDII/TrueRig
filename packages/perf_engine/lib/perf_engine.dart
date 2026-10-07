@@ -3,6 +3,7 @@ library;
 
 export 'src/advisor/upgrade_advisor.dart';
 export 'src/app_perf/app_estimator.dart';
+export 'src/bottleneck/system_bottleneck.dart';
 export 'src/compatibility/compatibility_checker.dart';
 export 'src/data/part_catalog.dart';
 export 'src/data/prebuilt_catalog.dart';

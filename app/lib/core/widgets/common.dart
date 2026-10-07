@@ -75,11 +75,11 @@ class HeroFrame extends StatelessWidget {
     ),
     child: Padding(
       padding: const EdgeInsets.all(1.5),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(Radii.l - 1.5),
-        ),
+      // Material (not DecoratedBox) so ink splashes of tiles inside show.
+      child: Material(
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(Radii.l - 1.5),
+        clipBehavior: Clip.antiAlias,
         child: child,
       ),
     ),

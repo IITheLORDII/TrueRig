@@ -1,41 +1,98 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/builder/builder_page.dart';
 import 'package:darbogaz/features/phone/phone_panel.dart';
 import 'package:darbogaz/features/watch/watch_pages.dart';
 
-/// Full-screen editor for one device, opened from a "Cihazlarım" card.
-class DeviceEditorPage extends StatelessWidget {
-  const DeviceEditorPage({super.key, required this.kind});
+extension DeviceSectionLabel on DeviceKind {
+  /// Possessive section name used in "Cihazlarım".
+  String get mine => switch (this) {
+    DeviceKind.pc => 'Bilgisayarım',
+    DeviceKind.phone => 'Telefonum',
+    DeviceKind.watch => 'Saatim',
+  };
+}
 
-  final DeviceKind kind;
+/// "Cihazlarım" tab: Bilgisayarım / Telefonum / Saatim, each edited in
+/// place. The chosen section is also the device "Analiz" shows.
+class DevicesPage extends ConsumerStatefulWidget {
+  const DevicesPage({super.key, this.initialKind});
+
+  /// From `/devices?kind=phone` (deep links, home tiles).
+  final DeviceKind? initialKind;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: BrandTitle(switch (kind) {
-        DeviceKind.pc => 'PC sistemim',
-        DeviceKind.phone => 'Telefonum',
-        DeviceKind.watch => 'Saatim',
-      }),
-      actions: [
-        // PC hardware can only be read on the website, not on a phone.
-        if (kind == DeviceKind.pc && kIsWeb)
-          IconButton(
-            tooltip: 'Bilgisayarımı algıla',
-            icon: const Icon(Icons.radar_rounded),
-            onPressed: () => context.push('/detect'),
+  ConsumerState<DevicesPage> createState() => _DevicesPageState();
+}
+
+class _DevicesPageState extends ConsumerState<DevicesPage> {
+  @override
+  void initState() {
+    super.initState();
+    final k = widget.initialKind;
+    if (k != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => ref.read(activeDeviceProvider.notifier).set(k),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = ref.watch(activeDeviceProvider);
+    return Scaffold(
+      appBar: AppBar(
+        title: const BrandTitle('Cihazlarım'),
+        actions: [
+          // PC hardware can only be read on the website, not on a phone.
+          if (kind == DeviceKind.pc && kIsWeb)
+            IconButton(
+              tooltip: 'Bilgisayarımı algıla',
+              icon: const Icon(Icons.radar_rounded),
+              onPressed: () => context.push('/detect'),
+            ),
+          const ProfileAction(),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              0,
+              Space.page,
+              Space.s,
+            ),
+            child: AppSegmented<DeviceKind>(
+              values: DeviceKind.values,
+              selected: kind,
+              labelOf: (k) => k.mine,
+              onChanged: ref.read(activeDeviceProvider.notifier).set,
+            ),
           ),
-      ],
-    ),
-    body: switch (kind) {
-      DeviceKind.pc => const PcPanel(),
-      DeviceKind.phone => const PhonePanel(),
-      DeviceKind.watch => const WatchPanel(),
-    },
-  );
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: Motion.normal,
+              child: KeyedSubtree(
+                key: ValueKey(kind),
+                child: switch (kind) {
+                  DeviceKind.pc => const PcPanel(),
+                  DeviceKind.phone => const PhonePanel(),
+                  DeviceKind.watch => const WatchPanel(),
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

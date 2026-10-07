@@ -41,11 +41,10 @@ GoRouter createRouter() => GoRouter(
       (s) => DetectPage(initialCode: s.uri.queryParameters['hw']),
     ),
     _page('/profile', (_) => const ProfilePage()),
+    // Old device editor addresses open the matching Cihazlarım section.
     GoRoute(
       path: '/devices/:kind',
-      parentNavigatorKey: _rootKey,
-      redirect: (_, s) => _kindFrom(s) == null ? '/home' : null,
-      builder: (_, s) => DeviceEditorPage(kind: _kindFrom(s)!),
+      redirect: (_, s) => '/devices?kind=${s.pathParameters['kind']}',
     ),
     GoRoute(
       path: '/pick/part/:category',
@@ -69,6 +68,16 @@ GoRouter createRouter() => GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: '/home', builder: (_, _) => const HomePage())],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/devices',
+              builder: (_, state) => DevicesPage(
+                initialKind: _kindNamed(state.uri.queryParameters['kind']),
+              ),
+            ),
+          ],
         ),
         StatefulShellBranch(
           routes: [
@@ -105,8 +114,7 @@ GoRouter createRouter() => GoRouter(
   ],
 );
 
-DeviceKind? _kindFrom(GoRouterState state) {
-  final name = state.pathParameters['kind'];
+DeviceKind? _kindNamed(String? name) {
   for (final k in DeviceKind.values) {
     if (k.name == name) return k;
   }
@@ -128,6 +136,7 @@ class _Shell extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   static const _tabs = [
+    AppTab('Ana Sayfa', Icons.home_outlined, Icons.home_rounded),
     AppTab('Cihazlarım', Icons.devices_outlined, Icons.devices_rounded),
     AppTab('Analiz', Icons.insights_outlined, Icons.insights_rounded),
     AppTab(

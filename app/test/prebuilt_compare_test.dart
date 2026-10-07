@@ -50,15 +50,23 @@ void main() {
     tester,
   ) async {
     await _pump(tester, await _prefs({}));
-    await _tap(tester, find.text('Hazır sistem seç'));
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Cihazlarım'),
+      ),
+    );
+    await _tap(tester, find.text('Hazır sistem seç (isteğe bağlı)'));
     await _search(tester, 'G770');
     await _tap(tester, find.text('Casper Excalibur G770'));
     await _tap(tester, find.text('i7-12700H · RTX 4060 · 16 GB'));
 
-    // Back on Cihazlarım: the PC card carries the system name.
-    final card = find.textContaining('Casper Excalibur G770 · i7-12700H');
-    expect(card, findsOneWidget);
-    await _tap(tester, card);
+    // Back on Bilgisayarım: the ready-made card carries the system name.
+    expect(
+      find.textContaining('Casper Excalibur G770 · i7-12700H'),
+      findsOneWidget,
+    );
     expect(find.text('Intel Core i7-12700H'), findsOneWidget);
     expect(find.text('NVIDIA GeForce RTX 4060 Laptop GPU'), findsOneWidget);
     // Laptop: no board / case / PSU slots.
@@ -68,14 +76,20 @@ void main() {
 
   testWidgets('a pasted listing title fills CPU, GPU and RAM', (tester) async {
     await _pump(tester, await _prefs({}));
-    await _tap(tester, find.text('Hazır sistem seç'));
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Cihazlarım'),
+      ),
+    );
+    await _tap(tester, find.text('Hazır sistem seç (isteğe bağlı)'));
     await _search(
       tester,
       'Gaming PC AMD Ryzen 5 7600 RX 7600 16GB DDR5 6000MHz 1TB NVMe',
     );
     expect(find.text('Başlıktan bulunanlar'), findsOneWidget);
     await _tap(tester, find.text('Bununla doldur'));
-    await _tap(tester, find.textContaining('Gaming PC AMD Ryzen 5 7600'));
     expect(find.text('AMD Ryzen 5 7600'), findsOneWidget);
     expect(find.text('AMD Radeon RX 7600'), findsOneWidget);
     expect(find.textContaining('16GB (2x8) DDR5-6000'), findsOneWidget);

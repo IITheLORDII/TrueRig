@@ -159,7 +159,7 @@ class _ChooseFirst extends StatelessWidget {
     icon: icon,
     message: message,
     action: FilledButton(
-      onPressed: () => context.go('/home'),
+      onPressed: () => context.go('/devices'),
       child: const Text('Cihazıma git'),
     ),
   );

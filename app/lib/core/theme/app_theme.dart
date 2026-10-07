@@ -176,7 +176,11 @@ class AppTheme {
         backgroundColor: scheme.surfaceContainer,
         indicatorColor: scheme.primary.withValues(alpha: 0.18),
         labelTextStyle: WidgetStatePropertyAll(
-          text.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+          text.labelSmall?.copyWith(
+            fontSize: 10.5,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0,
+          ),
         ),
       ),
       chipTheme: ChipThemeData(

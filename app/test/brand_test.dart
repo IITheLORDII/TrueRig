@@ -12,7 +12,7 @@ import 'support.dart';
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('splash shows the brand, then opens Cihazlarım', (tester) async {
+  testWidgets('splash shows the brand, then opens Ana Sayfa', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [selfDeviceIdProvider.overrideWith((ref) async => null)],
@@ -25,14 +25,20 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text(kAppTagline), findsNothing);
-    expect(find.text('PC ekle'), findsOneWidget);
+    expect(find.text('Durumun'), findsOneWidget);
   });
 
   testWidgets('every tab shows the logo, name and profile button', (
     tester,
   ) async {
     await pumpApp(tester);
-    for (final tab in ['Cihazlarım', 'Analiz', 'Karşılaştır', 'Fiyat']) {
+    for (final tab in [
+      'Ana Sayfa',
+      'Cihazlarım',
+      'Analiz',
+      'Karşılaştır',
+      'Fiyat',
+    ]) {
       await openTab(tester, tab);
       final bar = find.byType(AppBar);
       expect(

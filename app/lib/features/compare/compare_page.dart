@@ -114,7 +114,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
                 child: _SideCard(
                   caption: 'Benim',
                   name: mine ?? "Önce Cihazlarım'dan ekle",
-                  onTap: mine == null ? () => context.go('/home') : null,
+                  onTap: mine == null ? () => context.go('/devices') : null,
                 ),
               ),
               const Padding(

@@ -7,9 +7,10 @@ import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/features/phone/phone_picker_page.dart';
+import 'package:darbogaz/features/watch/pairing_card.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
-/// Watch selection shown in the "Cihaz" tab.
+/// "Saatim" section of Cihazlarım.
 class WatchPanel extends ConsumerWidget {
   const WatchPanel({super.key});
 
@@ -57,33 +58,24 @@ class WatchPanel extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 6),
-        Card(
-          child: ListTile(
-            dense: true,
-            leading: const Icon(Icons.link_rounded),
-            title: Text(phone?.displayName ?? 'Telefon seçilmedi'),
-            subtitle: Text(
-              explicitPair == null
-                  ? 'Eşlenen telefon (Telefon sekmesindeki seçimin)'
-                  : 'Eşlenen telefon',
-            ),
-            trailing: StatusPill(
-              text: report.phone == null
-                  ? 'Telefon seç'
-                  : (report.isCompatible ? 'Uyumlu' : 'Uyumsuz'),
-              color: report.phone == null
-                  ? palette.warn
-                  : (report.isCompatible ? palette.good : palette.bad),
-            ),
-            onTap: () async {
-              final picked = await context.push<Phone>('/pick/phone?mode=pair');
-              if (picked != null) {
-                ref.read(watchSelectionProvider.notifier).pairWith(picked);
-              }
-            },
-          ),
+        const SizedBox(height: 8),
+        PairingCard(
+          onChangePhone: () async {
+            final picked = await context.push<Phone>('/pick/phone?mode=pair');
+            if (picked != null) {
+              ref.read(watchSelectionProvider.notifier).pairWith(picked);
+            }
+          },
         ),
+        if (explicitPair == null && phone != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'Telefonum bölümündeki telefonun kullanılıyor.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(color: palette.muted),
+            ),
+          ),
         const SizedBox(height: 12),
         ActionRow(
           secondary: TextButton.icon(

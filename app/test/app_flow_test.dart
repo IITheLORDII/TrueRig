@@ -28,36 +28,47 @@ class _SeededBuild extends BuildController {
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('home lists the three devices as empty cards', (tester) async {
+  testWidgets('home shows status and feature tiles', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Cihazlarım'), findsWidgets);
-    for (final t in ['PC ekle', 'Telefon ekle', 'Saat ekle']) {
-      expect(find.text(t), findsOneWidget, reason: t);
+    expect(find.text('Durumun'), findsOneWidget);
+    for (final t in [
+      'Bilgisayarım eklenmedi',
+      'Telefonum eklenmedi',
+      'Saatim eklenmedi',
+      'Darboğaz analizi',
+      'Karşılaştır',
+      'Hazır sistem',
+    ]) {
+      expect(find.text(t), findsWidgets, reason: t);
     }
-    expect(find.text('Hazır sistem seç'), findsOneWidget);
   });
 
-  testWidgets('PC: add a CPU from the editor', (tester) async {
+  testWidgets('Cihazlarım: Bilgisayarım section edits the PC', (tester) async {
     await pumpApp(tester);
-    await tapText(tester, 'PC ekle');
-    expect(find.text('PC sistemim'), findsOneWidget);
+    await openTab(tester, 'Cihazlarım');
+    for (final t in ['Bilgisayarım', 'Telefonum', 'Saatim']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
     expect(find.text('Diğer parçalar'), findsOneWidget);
     expect(find.text('Kasa'), findsNothing); // collapsed
     await tapText(tester, 'İşlemci');
     await search(tester, '7800X3D');
     await tapText(tester, 'AMD Ryzen 7 7800X3D');
     expect(find.text('AMD Ryzen 7 7800X3D'), findsOneWidget);
-    expect(find.text('PC sistemim'), findsOneWidget);
   });
 
-  testWidgets('PC card shows the verdict and opens Analiz', (tester) async {
+  testWidgets('home status opens the general analysis; Oyun is per game', (
+    tester,
+  ) async {
     await pumpApp(tester, build: _SeededBuild.new);
-    expect(find.text('Uyumsuz'), findsOneWidget);
-    expect(find.text('Darboğaz · İşlemci'), findsOneWidget);
-    await tapText(tester, 'Analiz');
-    expect(find.text('İşlemci sınırlıyor'), findsOneWidget);
+    expect(find.textContaining('· İşlemci'), findsOneWidget);
+    await tapText(tester, 'Ryzen 5 5600 + GeForce RTX 4090');
+    expect(find.text('Genel darboğaz'), findsOneWidget);
+    expect(find.text('Çözünürlüğe göre'), findsOneWidget);
+    expect(find.text('İşlemci sınırlıyor'), findsWidgets);
 
     await tapText(tester, 'Oyun');
+    expect(find.text('Tüm oyunlar (ortalama FPS)'), findsOneWidget);
     expect(find.text('Counter-Strike 2'), findsOneWidget);
     await tapText(tester, 'Uygulama');
     expect(find.text('SolidWorks'), findsOneWidget);
@@ -67,8 +78,8 @@ void main() {
 
   testWidgets('phone: add from catalog, then analyse', (tester) async {
     await pumpApp(tester);
-    await tapText(tester, 'Telefon ekle');
-    expect(find.text('Telefonum'), findsOneWidget);
+    await openTab(tester, 'Cihazlarım');
+    await tapText(tester, 'Telefonum');
     await tapText(tester, 'Telefon seç');
     await search(tester, 'iPhone 15 Pro');
     await tapText(tester, 'Apple iPhone 15 Pro');
@@ -90,7 +101,7 @@ void main() {
     expect(find.textContaining('Bu telefon:'), findsNothing);
   });
 
-  testWidgets('watch: compatible with iPhone, not with an Android phone', (
+  testWidgets('Saatim: pairing card with iPhone, then with an Android', (
     tester,
   ) async {
     await pumpApp(
@@ -99,16 +110,27 @@ void main() {
         'phone.selection': ['iphone-15-pro', 'a17-pro', '8'],
       }),
     );
-    await tapText(tester, 'Saat ekle');
+    await openTab(tester, 'Cihazlarım');
+    await tapText(tester, 'Saatim');
     await tapText(tester, 'Saat seç');
     await search(tester, 'Series 10');
     await tapText(tester, 'Apple Watch Series 10');
+    expect(find.text('Telefon ⇄ Saat eşleşmesi'), findsOneWidget);
     expect(find.text('Uyumlu'), findsOneWidget);
+    expect(
+      find.textContaining('saat özelliği bu telefonla çalışır'),
+      findsOneWidget,
+    );
 
-    await tapText(tester, 'Apple iPhone 15 Pro');
+    await tapText(tester, 'Eşlenecek telefonu değiştir');
     await search(tester, 'Galaxy S24 Ultra');
     await tapText(tester, 'Samsung Galaxy S24 Ultra');
     expect(find.text('Uyumsuz'), findsOneWidget);
+    expect(find.textContaining('yalnızca iPhone ile çalışır'), findsOneWidget);
+
+    // Home shows the pairing too.
+    await openTab(tester, 'Ana Sayfa');
+    expect(find.text('EŞLEŞME'), findsOneWidget);
   });
 
   testWidgets('Analiz device chip switches the analysed device', (
@@ -122,7 +144,7 @@ void main() {
       }),
     );
     await openTab(tester, 'Analiz');
-    expect(find.text('İşlemci sınırlıyor'), findsOneWidget);
+    expect(find.text('Genel darboğaz'), findsOneWidget);
     await tap(tester, find.byIcon(Icons.unfold_more_rounded));
     await tapText(tester, 'Telefon: Google Pixel 8');
     expect(find.text('Darboğaz puanı · Tensor G3, 8 GB'), findsOneWidget);
@@ -131,7 +153,8 @@ void main() {
   testWidgets('selections persist across restarts', (tester) async {
     final prefs = await prefsWith({});
     await pumpApp(tester, prefs: prefs);
-    await tapText(tester, 'Telefon ekle');
+    await openTab(tester, 'Cihazlarım');
+    await tapText(tester, 'Telefonum');
     expect(prefs.getString('device.kind'), 'phone');
 
     final c = ProviderContainer(
@@ -182,5 +205,8 @@ void main() {
     router.go('/device');
     await tester.pumpAndSettle();
     expect(find.byType(HomePage), findsOneWidget);
+    router.go('/devices/phone');
+    await tester.pumpAndSettle();
+    expect(find.text('Telefon seç'), findsOneWidget);
   });
 }

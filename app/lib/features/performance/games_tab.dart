@@ -5,6 +5,7 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/features/analysis/analysis_page.dart';
 import 'package:darbogaz/features/analysis/settings_bar.dart';
 
 /// Bars are drawn against this FPS so high-refresh results stay comparable.
@@ -43,13 +44,18 @@ class GamesTab extends ConsumerWidget {
       );
     }
     final palette = context.palette;
+    final selected = ref.watch(fpsEstimateProvider);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
-        const AnalysisSettingsBar(showGame: false),
-        const SizedBox(height: 16),
+        const AnalysisSettingsBar(),
+        const SizedBox(height: 12),
+        if (selected != null) ...[
+          GameBottleneckCard(estimate: selected),
+          const SizedBox(height: 8),
+        ],
         SectionCard(
-          title: 'Tahmini ortalama FPS',
+          title: 'Tüm oyunlar (ortalama FPS)',
           icon: Icons.sports_esports_rounded,
           child: Column(
             children: [
