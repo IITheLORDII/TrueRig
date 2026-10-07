@@ -191,6 +191,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
               mine: c.mine!,
               other: c.other!,
               wins: countWins(sections),
+              highlights: topDifferences(sections),
             ),
             const SizedBox(height: Space.s),
             PriceCompareCard(

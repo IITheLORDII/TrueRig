@@ -28,19 +28,42 @@ class _SeededBuild extends BuildController {
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('home shows status and feature tiles', (tester) async {
+  testWidgets('home shows devices, three questions and more', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Durumun'), findsOneWidget);
+    expect(find.text('Cihazların'), findsOneWidget);
     for (final t in [
       'Bilgisayarım eklenmedi',
       'Telefonum eklenmedi',
       'Saatim eklenmedi',
-      'Darboğaz analizi',
-      'Karşılaştır',
-      'Hazır sistem',
+      'Cihazım oyunları ve programları kaldırır mı?',
+      'Hangisi daha iyi?',
+      'Nereden en ucuza alırım?',
+      'Hazır bilgisayar / laptop seç',
     ]) {
       expect(find.text(t), findsWidgets, reason: t);
     }
+  });
+
+  testWidgets('first question without a device opens the add sheet', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await tapText(tester, 'Cihazım oyunları ve programları kaldırır mı?');
+    expect(find.text('Bilgisayarını nasıl ekleyelim?'), findsOneWidget);
+    expect(
+      find.text('Laptop ya da hazır bilgisayar adını seç'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('ⓘ explains a technical word', (tester) async {
+    await pumpApp(tester, build: _SeededBuild.new);
+    await tapText(tester, 'Ryzen 5 5600 + GeForce RTX 4090');
+    await tap(tester, find.byTooltip('Darboğaz nedir?'));
+    expect(
+      find.textContaining('Bir parçanın diğerini yavaşlatmasıdır'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Cihazlarım: Bilgisayarım section edits the PC', (tester) async {
@@ -61,8 +84,10 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester, build: _SeededBuild.new);
-    expect(find.textContaining('· İşlemci'), findsOneWidget);
+    expect(find.text('Darboğaz'), findsOneWidget);
     await tapText(tester, 'Ryzen 5 5600 + GeForce RTX 4090');
+    // Plain answer first, details below.
+    expect(find.text('İşlemcin ekran kartını yavaşlatıyor'), findsOneWidget);
     expect(find.text('Genel darboğaz'), findsOneWidget);
     expect(find.text('Çözünürlüğe göre'), findsOneWidget);
     expect(find.text('İşlemci sınırlıyor'), findsWidgets);
@@ -147,7 +172,8 @@ void main() {
     expect(find.text('Genel darboğaz'), findsOneWidget);
     await tap(tester, find.byIcon(Icons.unfold_more_rounded));
     await tapText(tester, 'Telefon: Google Pixel 8');
-    expect(find.text('Darboğaz puanı · Tensor G3, 8 GB'), findsOneWidget);
+    expect(find.text('Genel puan · Tensor G3, 8 GB'), findsOneWidget);
+    expect(find.text('Üst segment telefon'), findsOneWidget);
   });
 
   testWidgets('selections persist across restarts', (tester) async {
@@ -176,7 +202,7 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
-    await openTab(tester, 'Fiyat');
+    await openTab(tester, 'Parça Ara');
     await tester.enterText(find.byType(TextField), 'rtx 4070 super');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();

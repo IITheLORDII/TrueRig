@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:go_router/go_router.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/widgets/common.dart';
@@ -34,6 +35,16 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           const SavedDevicesCard(),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.help_outline_rounded),
+              title: const Text('Nasıl kullanılır?'),
+              subtitle: const Text('Kısa tanıtımı yeniden göster'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/welcome'),
+            ),
+          ),
           const SizedBox(height: 12),
           const SectionCard(
             title: 'Tahminler hakkında',

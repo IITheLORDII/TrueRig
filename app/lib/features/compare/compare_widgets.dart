@@ -106,11 +106,15 @@ class VerdictCard extends StatelessWidget {
     required this.mine,
     required this.other,
     required this.wins,
+    this.highlights = const [],
   });
 
   final String mine;
   final String other;
   final ({int a, int b}) wins;
+
+  /// Biggest differences, shown as plain lines under the headline.
+  final List<CompareRow> highlights;
 
   @override
   Widget build(BuildContext context) {
@@ -183,6 +187,24 @@ class VerdictCard extends StatelessWidget {
               ),
             ],
           ),
+          if (highlights.isNotEmpty) ...[
+            const SizedBox(height: Space.s),
+            Text(
+              'En büyük farklar',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            for (final r in highlights)
+              Padding(
+                padding: const EdgeInsets.only(top: Space.xs),
+                child: Text(
+                  '• ${r.label}: ${r.winner == -1 ? mine : other} önde '
+                  '(${r.aDisplay} / ${r.bDisplay})',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+          ],
         ],
       ),
     );

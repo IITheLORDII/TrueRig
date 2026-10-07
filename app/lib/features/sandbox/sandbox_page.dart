@@ -327,7 +327,12 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
             message: 'İki cihazı da seçince farklar burada görünür.',
           )
         else ...[
-          VerdictCard(mine: a!, other: b!, wins: countWins(sections)),
+          VerdictCard(
+            mine: a!,
+            other: b!,
+            wins: countWins(sections),
+            highlights: topDifferences(sections),
+          ),
           const SizedBox(height: Space.s),
           for (final sec in sections) ...[
             CompareTable(section: sec, mine: a, other: b),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/device/add_device_sheet.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -127,9 +127,10 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
       case DeviceKind.phone:
         final spec = ref.watch(phoneSpecProvider);
         if (spec == null) {
-          return _ChooseFirst(
+          return const _ChooseFirst(
+            kind: DeviceKind.phone,
             icon: Icons.smartphone_rounded,
-            message: 'Performans için önce telefonunu seç.',
+            message: 'Telefonunu ekle, ne kadar iyi olduğunu söyleyelim.',
           );
         }
         return switch (section) {
@@ -141,9 +142,10 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
       case DeviceKind.watch:
         final report = ref.watch(watchReportProvider);
         if (report == null) {
-          return _ChooseFirst(
+          return const _ChooseFirst(
+            kind: DeviceKind.watch,
             icon: Icons.watch_rounded,
-            message: 'Ayrıntılar için önce saatini seç.',
+            message: 'Saatini ekle, telefonunla uyumunu gösterelim.',
           );
         }
         return switch (section) {
@@ -162,19 +164,25 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
   }
 }
 
-class _ChooseFirst extends StatelessWidget {
-  const _ChooseFirst({required this.icon, required this.message});
+class _ChooseFirst extends ConsumerWidget {
+  const _ChooseFirst({
+    required this.kind,
+    required this.icon,
+    required this.message,
+  });
 
+  final DeviceKind kind;
   final IconData icon;
   final String message;
 
   @override
-  Widget build(BuildContext context) => EmptyHint(
+  Widget build(BuildContext context, WidgetRef ref) => EmptyHint(
     icon: icon,
     message: message,
-    action: FilledButton(
-      onPressed: () => context.go('/devices'),
-      child: const Text('Cihazıma git'),
+    action: FilledButton.icon(
+      onPressed: () => showAddDeviceSheet(context, ref, kind),
+      icon: const Icon(Icons.add_rounded),
+      label: Text('${kind.label} ekle'),
     ),
   );
 }

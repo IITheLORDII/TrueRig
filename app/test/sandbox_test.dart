@@ -12,11 +12,9 @@ void main() {
   ) async {
     await pumpApp(tester);
     expect(find.text('Analiz yap'), findsOneWidget);
-    final status = tester.getTopLeft(find.text('Durumun')).dy;
+    final status = tester.getTopLeft(find.text('Cihazların')).dy;
     final quick = tester.getTopLeft(find.text('Analiz yap')).dy;
-    final features = tester
-        .getTopLeft(find.textContaining(RegExp('yapmak', caseSensitive: false)))
-        .dy;
+    final features = tester.getTopLeft(find.textContaining('RENMEK')).dy;
     expect(quick, greaterThan(status));
     expect(quick, lessThan(features));
   });

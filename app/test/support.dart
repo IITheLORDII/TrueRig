@@ -10,8 +10,10 @@ import 'package:darbogaz/features/detect/self_device.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
 import 'package:darbogaz/features/prices/store_list.dart';
 
+/// Mock preferences; the welcome tour counts as seen unless a test says
+/// otherwise.
 Future<SharedPreferences> prefsWith(Map<String, Object> values) async {
-  SharedPreferences.setMockInitialValues(values);
+  SharedPreferences.setMockInitialValues({'onboarding.done': true, ...values});
   return SharedPreferences.getInstance();
 }
 

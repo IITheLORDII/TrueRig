@@ -1,8 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:darbogaz/features/onboarding/onboarding_page.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/features/sandbox/sandbox_page.dart';
@@ -36,7 +37,15 @@ GoRouter createRouter() => GoRouter(
   initialLocation: '/splash',
   routes: [
     // The website opens on hardware detection; the apps on "Cihazlarım".
-    _page('/splash', (_) => SplashPage(next: kIsWeb ? '/detect' : '/home')),
+    // First launch shows the welcome tour; later launches go straight on.
+    _page(
+      '/splash',
+      (_) => Consumer(
+        builder: (_, ref, _) =>
+            SplashPage(next: onboardingDone(ref) ? homeRoute() : '/welcome'),
+      ),
+    ),
+    _page('/welcome', (_) => const OnboardingPage()),
     _page(
       '/detect',
       (s) => DetectPage(initialCode: s.uri.queryParameters['hw']),
@@ -152,7 +161,7 @@ class _Shell extends StatelessWidget {
       Icons.compare_arrows_outlined,
       Icons.compare_arrows_rounded,
     ),
-    AppTab('Fiyat', Icons.sell_outlined, Icons.sell_rounded),
+    AppTab('Parça Ara', Icons.sell_outlined, Icons.sell_rounded),
   ];
 
   @override

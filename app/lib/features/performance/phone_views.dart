@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/analysis/plain_verdict.dart';
+import 'package:darbogaz/core/widgets/term_info.dart';
+import 'package:darbogaz/core/widgets/plain_verdict_card.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
@@ -39,11 +42,18 @@ class PhoneSummaryView extends ConsumerWidget {
       for (final id in ['pubg-mobile', 'genshin', 'codm', 'mlbb'])
         _est.game(kMobileGames.firstWhere((g) => g.id == id), spec),
     ];
+    final insights = const PhoneInsightEstimator().analyze(
+      spec,
+      currentYear: DateTime.now().year,
+    );
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
+        PlainVerdictCard(verdict: phoneVerdict(s, insights)),
+        const SizedBox(height: 8),
         SectionCard(
           hero: true,
+          term: Term.score,
           title: spec.phone.displayName,
           icon: Icons.speed_rounded,
           trailing: StatusPill(
@@ -64,7 +74,7 @@ class PhoneSummaryView extends ConsumerWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Darboğaz puanı · ${spec.soc.name}, ${spec.ramGb} GB',
+                      'Genel puan · ${spec.soc.name}, ${spec.ramGb} GB',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: palette.muted,
                       ),
@@ -144,6 +154,7 @@ class PhoneGamesView extends ConsumerWidget {
         const SizedBox(height: 8),
         SectionCard(
           title: 'Tahmini FPS (ilk / ısınınca)',
+          term: Term.fps,
           icon: Icons.sports_esports_rounded,
           child: Column(
             children: [
@@ -205,6 +216,8 @@ class WatchSummaryView extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
+        PlainVerdictCard(verdict: watchVerdict(report)),
+        const SizedBox(height: 8),
         SectionCard(
           hero: true,
           title: w.displayName,

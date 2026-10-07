@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/term_info.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -14,6 +15,7 @@ class SectionCard extends StatelessWidget {
     this.icon,
     this.trailing,
     this.hero = false,
+    this.term,
   });
 
   final String title;
@@ -21,6 +23,9 @@ class SectionCard extends StatelessWidget {
   final IconData? icon;
   final Widget? trailing;
   final bool hero;
+
+  /// Shows an ⓘ that explains the technical word in the title.
+  final Term? term;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +49,7 @@ class SectionCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (term != null) TermInfoButton(term!),
               ?trailing,
             ],
           ),

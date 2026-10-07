@@ -14,7 +14,7 @@ import 'package:darbogaz/features/prices/store_list.dart';
 import 'support.dart' show FakePriceRepository;
 
 Future<SharedPreferences> _prefs(Map<String, Object> values) async {
-  SharedPreferences.setMockInitialValues(values);
+  SharedPreferences.setMockInitialValues({'onboarding.done': true, ...values});
   return SharedPreferences.getInstance();
 }
 

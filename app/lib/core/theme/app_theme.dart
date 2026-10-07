@@ -123,8 +123,15 @@ class AppTheme {
 
   static ThemeData _base(ColorScheme scheme, AppPalette palette) {
     final isDark = scheme.brightness == Brightness.dark;
-    final text = GoogleFonts.interTextTheme(
+    final base = GoogleFonts.interTextTheme(
       ThemeData(brightness: scheme.brightness).textTheme,
+    );
+    // Slightly larger small text than Material defaults: easier to read
+    // for everyone (captions 12, secondary text 13).
+    final text = base.copyWith(
+      labelSmall: base.labelSmall?.copyWith(fontSize: 12),
+      labelMedium: base.labelMedium?.copyWith(fontSize: 13),
+      bodySmall: base.bodySmall?.copyWith(fontSize: 13),
     );
     return ThemeData(
       useMaterial3: true,

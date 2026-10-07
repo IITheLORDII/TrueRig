@@ -25,7 +25,21 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text(kAppTagline), findsNothing);
-    expect(find.text('Durumun'), findsOneWidget);
+    // First launch: the welcome tour, skippable at any time.
+    expect(find.text('TrueRig ne yapar?'), findsOneWidget);
+    await tester.tap(find.text('Atla'));
+    await tester.pumpAndSettle();
+    expect(find.text('Cihazların'), findsOneWidget);
+  });
+
+  testWidgets('tour: choosing a device opens its add sheet', (tester) async {
+    await pumpApp(tester, prefs: await prefsWith({'onboarding.done': false}));
+    expect(find.text('TrueRig ne yapar?'), findsOneWidget);
+    await tapText(tester, 'Devam');
+    expect(find.text('Darboğaz nedir?'), findsOneWidget);
+    await tapText(tester, 'Devam');
+    await tapText(tester, 'Telefonum');
+    expect(find.text('Telefonunu nasıl ekleyelim?'), findsOneWidget);
   });
 
   testWidgets('every tab shows the logo, name and profile button', (
@@ -37,7 +51,7 @@ void main() {
       'Cihazlarım',
       'Analiz',
       'Karşılaştır',
-      'Fiyat',
+      'Parça Ara',
     ]) {
       await openTab(tester, tab);
       final bar = find.byType(AppBar);
@@ -55,14 +69,27 @@ void main() {
     }
   });
 
-  testWidgets('home and Analiz survive large text (accessibility)', (
+  testWidgets('main screens survive large text (accessibility)', (
     tester,
   ) async {
-    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await pumpApp(tester);
     expect(tester.takeException(), isNull);
-    await openTab(tester, 'Analiz');
+    for (final tab in ['Analiz', 'Karşılaştır', 'Parça Ara', 'Cihazlarım']) {
+      await openTab(tester, tab);
+      expect(tester.takeException(), isNull, reason: tab);
+    }
+  });
+
+  testWidgets('welcome tour survives large text', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpApp(tester, prefs: await prefsWith({'onboarding.done': false}));
+    for (var i = 0; i < 2; i++) {
+      expect(tester.takeException(), isNull);
+      await tapText(tester, 'Devam');
+    }
     expect(tester.takeException(), isNull);
   });
 }

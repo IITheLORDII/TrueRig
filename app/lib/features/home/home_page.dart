@@ -3,21 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/onboarding/onboarding_page.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/platform/store_app.dart';
 import 'package:darbogaz/core/providers.dart';
+import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/device_chip.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
+import 'package:darbogaz/features/device/add_device_sheet.dart';
 import 'package:darbogaz/features/device/device_page.dart';
 import 'package:darbogaz/features/watch/pairing_card.dart';
 
-/// "Ana Sayfa": status of the user's devices and entry points to every
-/// feature.
+/// "Ana Sayfa": your devices at a glance and three everyday questions.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
@@ -37,23 +39,27 @@ class HomePage extends ConsumerWidget {
           Space.xl,
         ),
         children: [
+          const _PendingAdd(),
           const _SelfPhoneBanner(),
           const _StatusCard(),
           const SizedBox(height: Space.s),
-          const _QuickAnalysisCard(),
-          const SectionHeader('Ne yapmak istersin?'),
-          const _FeatureGrid(),
+          const _TryCard(),
+          const SectionHeader('Ne öğrenmek istersin?'),
+          const _Questions(),
           if (hasWatch) ...[
             const SectionHeader('Eşleşme'),
             const PairingCard(),
           ],
+          const SectionHeader('Diğer'),
+          const _More(),
         ],
       ),
     );
   }
 }
 
-/// One line per device; tapping a configured one opens its analysis.
+/// One line per device; tapping a configured one opens its analysis,
+/// an empty one the "how do you want to add it" sheet.
 class _StatusCard extends ConsumerWidget {
   const _StatusCard();
 
@@ -70,16 +76,10 @@ class _StatusCard extends ConsumerWidget {
     Widget? pcVerdict() {
       final g = general;
       if (g == null) return null;
-      final part = switch (g.limiter) {
-        Limiter.cpu => 'İşlemci',
-        Limiter.gpu => 'Ekran kartı',
-        Limiter.balanced => 'Dengeli',
-      };
+      final pct = g.bottleneckPercent;
       return VerdictChip(
-        '%${g.bottleneckPercent.round()} · $part',
-        tone: g.bottleneckPercent < 10
-            ? Tone.good
-            : (g.bottleneckPercent < 20 ? Tone.warn : Tone.bad),
+        pct < 10 ? 'Dengeli' : (pct < 20 ? 'Biraz darboğaz' : 'Darboğaz'),
+        tone: pct < 10 ? Tone.good : (pct < 20 ? Tone.warn : Tone.bad),
       );
     }
 
@@ -109,18 +109,21 @@ class _StatusCard extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Text(
-                    'Durumun',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                  Expanded(
+                    child: Text(
+                      'Cihazların',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    'Genel · '
-                    '${ref.watch(analysisSettingsProvider).resolution.label}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: context.palette.muted,
+                  Flexible(
+                    child: Text(
+                      'Dokun, sonucu gör',
+                      textAlign: TextAlign.end,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: context.palette.muted,
+                      ),
                     ),
                   ),
                 ],
@@ -136,11 +139,7 @@ class _StatusCard extends ConsumerWidget {
               name: spec?.phone.displayName,
               verdict: phoneSummary == null
                   ? null
-                  : VerdictChip(
-                      '${phoneSummary.score.round()} · '
-                      '${phoneSummary.tier.label}',
-                      tone: Tone.brand,
-                    ),
+                  : VerdictChip(phoneSummary.tier.label, tone: Tone.brand),
             ),
             _StatusRow(
               kind: DeviceKind.watch,
@@ -164,8 +163,12 @@ class _StatusRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final configured = name != null;
+    final count = ref
+        .watch(savedDevicesProvider)
+        .of(kind)
+        .where((d) => !d.isEmpty)
+        .length;
     return ListTile(
-      dense: true,
       leading: Icon(
         deviceIcon(kind),
         color: Theme.of(context).colorScheme.primary,
@@ -178,20 +181,142 @@ class _StatusRow extends ConsumerWidget {
             ? const TextStyle(fontWeight: FontWeight.w600)
             : TextStyle(color: context.palette.muted),
       ),
+      subtitle: count > 1 ? Text('$count kayıtlı ${kind.label}') : null,
       trailing: configured
           ? verdict
-          : const Icon(Icons.add_circle_outline_rounded),
+          : ActionChip(
+              avatar: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Ekle'),
+              onPressed: () => showAddDeviceSheet(context, ref, kind),
+            ),
       onTap: () {
+        if (!configured) {
+          showAddDeviceSheet(context, ref, kind);
+          return;
+        }
         ref.read(activeDeviceProvider.notifier).set(kind);
-        context.go(configured ? '/analysis' : '/devices');
+        context.go('/analysis');
       },
     );
   }
 }
 
+/// The three things most people open the app for, in everyday words.
+class _Questions extends ConsumerWidget {
+  const _Questions();
+
+  /// First configured device (PC, then phone, then watch), if any.
+  DeviceKind? _firstDevice(WidgetRef ref) {
+    if (ref.read(buildProvider).cpu != null) return DeviceKind.pc;
+    if (ref.read(phoneSpecProvider) != null) return DeviceKind.phone;
+    if (ref.read(watchReportProvider) != null) return DeviceKind.watch;
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        _QuestionCard(
+          icon: Icons.sports_esports_rounded,
+          question: 'Cihazım oyunları ve programları kaldırır mı?',
+          hint: 'Bilgisayar, telefon ya da saatinin sade bir karnesi',
+          onTap: () {
+            final kind = _firstDevice(ref);
+            if (kind == null) {
+              showAddDeviceSheet(context, ref, DeviceKind.pc);
+              return;
+            }
+            ref.read(activeDeviceProvider.notifier).set(kind);
+            context.go('/analysis');
+          },
+        ),
+        _QuestionCard(
+          icon: Icons.compare_arrows_rounded,
+          question: 'Hangisi daha iyi?',
+          hint: 'İki bilgisayarı, telefonu ya da saati yan yana koy',
+          onTap: () => context.go('/compare'),
+        ),
+        _QuestionCard(
+          icon: Icons.sell_rounded,
+          question: 'Nereden en ucuza alırım?',
+          hint: 'Parçayı ya da modeli yaz, mağaza fiyatlarını gör',
+          onTap: () => context.go('/prices'),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuestionCard extends StatelessWidget {
+  const _QuestionCard({
+    required this.icon,
+    required this.question,
+    required this.hint,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String question;
+  final String hint;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(Space.l),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(Radii.m),
+                  ),
+                  child: Icon(icon, color: theme.colorScheme.primary),
+                ),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        question,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        hint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: context.palette.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// "Analiz yap": scratch area that saves nothing.
-class _QuickAnalysisCard extends StatelessWidget {
-  const _QuickAnalysisCard();
+class _TryCard extends StatelessWidget {
+  const _TryCard();
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +324,10 @@ class _QuickAnalysisCard extends StatelessWidget {
     Widget action(IconData icon, String label, String to) => Expanded(
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: Space.s),
+          padding: const EdgeInsets.symmetric(
+            vertical: Space.s,
+            horizontal: Space.xs,
+          ),
         ),
         onPressed: () => context.push(to),
         child: Column(
@@ -207,7 +335,7 @@ class _QuickAnalysisCard extends StatelessWidget {
           children: [
             Icon(icon),
             const SizedBox(height: Space.xs),
-            FittedBox(fit: BoxFit.scaleDown, child: Text(label)),
+            Text(label, textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -219,13 +347,15 @@ class _QuickAnalysisCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Kaydetmeden dene · uygulama kapanınca silinir',
-            style: theme.textTheme.labelSmall?.copyWith(
+            'Kaydetmeden dene: hiçbir şey kaydedilmez, uygulama kapanınca '
+            'silinir.',
+            style: theme.textTheme.bodySmall?.copyWith(
               color: context.palette.muted,
             ),
           ),
           const SizedBox(height: Space.s),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               action(
                 Icons.travel_explore_rounded,
@@ -248,120 +378,69 @@ class _QuickAnalysisCard extends StatelessWidget {
   }
 }
 
-class _Feature {
-  const _Feature(this.icon, this.title, this.subtitle, this.onTap);
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final void Function(BuildContext context) onTap;
-}
-
-class _FeatureGrid extends StatelessWidget {
-  const _FeatureGrid();
+/// Less common entry points as a plain list.
+class _More extends ConsumerWidget {
+  const _More();
 
   @override
-  Widget build(BuildContext context) {
-    final features = [
-      _Feature(
-        Icons.insights_rounded,
-        'Darboğaz analizi',
-        'Genel ve oyun bazlı',
-        (c) => c.go('/analysis'),
+  Widget build(BuildContext context, WidgetRef ref) {
+    Widget item(IconData icon, String title, VoidCallback onTap) => ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      trailing: const Icon(Icons.chevron_right_rounded),
+      onTap: onTap,
+    );
+    return Card(
+      child: Column(
+        children: [
+          item(
+            Icons.laptop_chromebook_rounded,
+            'Hazır bilgisayar / laptop seç',
+            () => context.push('/pick/prebuilt'),
+          ),
+          if (isStoreApp)
+            item(
+              Icons.qr_code_scanner_rounded,
+              'Kutudaki barkodu tara',
+              () => context.push('/prices/scan'),
+            )
+          else
+            item(
+              Icons.radar_rounded,
+              'Bu bilgisayarı otomatik tanı',
+              () => context.push('/detect'),
+            ),
+          item(
+            Icons.devices_rounded,
+            'Cihazlarım',
+            () => context.go('/devices'),
+          ),
+          item(
+            Icons.help_outline_rounded,
+            'Nasıl kullanılır?',
+            () => context.push('/welcome'),
+          ),
+        ],
       ),
-      _Feature(
-        Icons.compare_arrows_rounded,
-        'Karşılaştır',
-        'Cihazını başkasıyla kıyasla',
-        (c) => c.go('/compare'),
-      ),
-      _Feature(
-        Icons.manage_search_rounded,
-        'Parça ara',
-        'Model ya da seri no ile fiyat',
-        (c) => c.go('/prices'),
-      ),
-      _Feature(
-        Icons.devices_rounded,
-        'Cihazlarım',
-        'Bilgisayar, telefon, saat',
-        (c) => c.go('/devices'),
-      ),
-      _Feature(
-        Icons.laptop_chromebook_rounded,
-        'Hazır sistem',
-        'Laptop ya da ilan başlığı',
-        (c) => c.push('/pick/prebuilt'),
-      ),
-      if (isStoreApp)
-        _Feature(
-          Icons.qr_code_scanner_rounded,
-          'Barkod tara',
-          'Kutudaki barkoddan fiyat',
-          (c) => c.push('/prices/scan'),
-        )
-      else
-        _Feature(
-          Icons.radar_rounded,
-          'Bilgisayarımı algıla',
-          'Tarayıcıdan donanım okuma',
-          (c) => c.push('/detect'),
-        ),
-    ];
-    return LayoutBuilder(
-      builder: (context, box) {
-        final width = (box.maxWidth - Space.s) / 2;
-        return Wrap(
-          spacing: Space.s,
-          runSpacing: Space.s,
-          children: [
-            for (final f in features)
-              SizedBox(
-                width: width,
-                child: _FeatureTile(feature: f),
-              ),
-          ],
-        );
-      },
     );
   }
 }
 
-class _FeatureTile extends StatelessWidget {
-  const _FeatureTile({required this.feature});
-
-  final _Feature feature;
+/// Opens the "add" sheet for the device picked on the welcome tour, once.
+class _PendingAdd extends ConsumerWidget {
+  const _PendingAdd();
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => feature.onTap(context),
-        child: Padding(
-          padding: const EdgeInsets.all(Space.m),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(feature.icon, color: theme.colorScheme.primary),
-              const SizedBox(height: Space.s),
-              Text(
-                feature.title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              Text(
-                feature.subtitle,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: context.palette.muted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final kind = ref.watch(pendingAddProvider);
+    if (kind != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        ref.read(pendingAddProvider.notifier).set(null);
+        showAddDeviceSheet(context, ref, kind);
+      });
+    }
+    return const SizedBox.shrink();
   }
 }
 

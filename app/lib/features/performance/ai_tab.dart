@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/term_info.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -56,7 +57,8 @@ class _AiTabState extends ConsumerState<AiTab> {
         ),
         const SizedBox(height: 16),
         SectionCard(
-          title: 'Üretim hızı (token/sn)',
+          title: 'Kelime hızı (token/sn)',
+          term: Term.tokensPerSec,
           icon: Icons.psychology_rounded,
           child: Column(
             children: [

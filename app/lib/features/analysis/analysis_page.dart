@@ -2,9 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/devices.dart';
+import 'package:darbogaz/features/device/add_device_sheet.dart';
+import 'package:darbogaz/features/analysis/plain_verdict.dart';
+import 'package:darbogaz/core/widgets/term_info.dart';
+import 'package:darbogaz/core/widgets/plain_verdict_card.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -42,10 +46,13 @@ class PcSummaryView extends ConsumerWidget {
         if (general == null)
           EmptyHint(
             icon: Icons.speed_rounded,
-            message: 'Darboğaz analizi için işlemci ve ekran kartı seç.',
-            action: FilledButton(
-              onPressed: () => context.go('/devices'),
-              child: const Text('Bilgisayarımı kur'),
+            message:
+                'Bilgisayarını ekle; oyunlarda nasıl olduğunu ve neyin '
+                'onu yavaşlattığını sade dille söyleyelim.',
+            action: FilledButton.icon(
+              onPressed: () => showAddDeviceSheet(context, ref, DeviceKind.pc),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Bilgisayarımı ekle'),
             ),
           )
         else ...[
@@ -58,6 +65,8 @@ class PcSummaryView extends ConsumerWidget {
                 .update((s) => s.copyWith(resolution: r)),
           ),
           const SizedBox(height: Space.m),
+          PlainVerdictCard(verdict: pcVerdict(general)),
+          const SizedBox(height: Space.s),
           GeneralBottleneckCard(general: general),
           const SizedBox(height: Space.s),
           const _ResolutionCard(),
@@ -94,6 +103,7 @@ class GeneralBottleneckCard extends StatelessWidget {
     return SectionCard(
       hero: true,
       title: 'Genel darboğaz',
+      term: Term.bottleneck,
       icon: Icons.speed_rounded,
       trailing: VerdictChip(
         '${g.resolution.label} · Yüksek',
@@ -157,6 +167,7 @@ class ResolutionBottleneckCard extends StatelessWidget {
     final palette = context.palette;
     return SectionCard(
       title: 'Çözünürlüğe göre',
+      term: Term.resolution,
       icon: Icons.aspect_ratio_rounded,
       child: Column(
         children: [
@@ -216,7 +227,7 @@ class GameBottleneckCard extends StatelessWidget {
             ],
           ),
           Text(
-            '1% low ≈ ${e.onePercentLowFps.round()} FPS · '
+            'En düşük anlarda ≈ ${e.onePercentLowFps.round()} FPS · '
             '${e.resolution.label} ${e.preset.label}',
             style: theme.textTheme.labelMedium?.copyWith(color: palette.muted),
           ),

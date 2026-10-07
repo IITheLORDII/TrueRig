@@ -268,3 +268,24 @@ List<CompareSection> compareWatches(WatchReport a, WatchReport b) {
   }
   return (a: a, b: b);
 }
+
+/// Numeric rows with the biggest relative gap (ties excluded), largest
+/// first: the "why" behind the winner in plain words.
+List<CompareRow> topDifferences(
+  List<CompareSection> sections, {
+  int count = 3,
+}) {
+  double gap(CompareRow r) {
+    final x = r.a!;
+    final y = r.b!;
+    final lo = x < y ? x : y;
+    final hi = x > y ? x : y;
+    return lo <= 0 ? 1 : hi / lo - 1;
+  }
+
+  final rows = [
+    for (final r in sections.expand((s) => s.rows))
+      if (r.winner != 0) r,
+  ]..sort((p, q) => gap(q).compareTo(gap(p)));
+  return rows.take(count).toList();
+}

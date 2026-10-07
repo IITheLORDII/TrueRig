@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:darbogaz/features/device/add_device_sheet.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -39,7 +40,10 @@ class DeviceSlotBar extends ConsumerWidget {
           ActionChip(
             avatar: const Icon(Icons.add_rounded, size: 18),
             label: Text('${kind.label} ekle'),
-            onPressed: () => ctl.addNew(kind),
+            onPressed: () {
+              ctl.addNew(kind);
+              showAddDeviceSheet(context, ref, kind);
+            },
           ),
         ],
       ),

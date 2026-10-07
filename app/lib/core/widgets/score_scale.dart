@@ -100,7 +100,9 @@ class ScoreScale extends StatelessWidget {
                       height: 10,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(Radii.s),
+                        // Stretch: ColoredBox has no size of its own.
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             for (var i = 0; i < zones.length; i++)
                               Expanded(

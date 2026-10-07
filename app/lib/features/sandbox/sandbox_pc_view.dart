@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/analysis/plain_verdict.dart';
+import 'package:darbogaz/core/widgets/plain_verdict_card.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
@@ -163,6 +165,8 @@ class _SandboxPcResultsState extends State<SandboxPcResults> {
           labelOf: (r) => r.label,
           onChanged: (r) => setState(() => _resolution = r),
         ),
+        const SizedBox(height: Space.s),
+        PlainVerdictCard(verdict: pcVerdict(general)),
         const SizedBox(height: Space.s),
         GeneralBottleneckCard(general: general),
         const SizedBox(height: Space.s),

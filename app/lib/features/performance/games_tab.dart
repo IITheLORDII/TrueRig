@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/term_info.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
@@ -56,6 +57,7 @@ class GamesTab extends ConsumerWidget {
         ],
         SectionCard(
           title: 'Tüm oyunlar (ortalama FPS)',
+          term: Term.fps,
           icon: Icons.sports_esports_rounded,
           child: Column(
             children: [
