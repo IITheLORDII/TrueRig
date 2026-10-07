@@ -73,6 +73,16 @@ class _PricesPageState extends ConsumerState<PricesPage> {
     ref.read(recentSearchesProvider.notifier).add(q);
   }
 
+  /// Closes the shown product and returns to recent searches.
+  void _clear() {
+    _controller.clear();
+    setState(() => _query = '');
+    // Drop ?q= so opening the same product again works.
+    if (GoRouterState.of(context).uri.queryParameters.containsKey('q')) {
+      context.go('/prices');
+    }
+  }
+
   Future<void> _scan() async {
     final code = await context.push<String>('/prices/scan');
     if (!mounted || code == null) return;
@@ -89,6 +99,13 @@ class _PricesPageState extends ConsumerState<PricesPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: _query.isEmpty
+            ? null
+            : IconButton(
+                tooltip: 'Ürünü kapat',
+                icon: const Icon(Icons.close_rounded),
+                onPressed: _clear,
+              ),
         title: const BrandTitle('Parça Ara'),
         actions: const [ProfileAction()],
       ),

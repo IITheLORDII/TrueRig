@@ -183,9 +183,10 @@ void main() {
     expect(find.text('NVIDIA GeForce RTX 4070 Super'), findsOneWidget);
     expect(find.text('Akakçe'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), '');
-    await tester.testTextInput.receiveAction(TextInputAction.search);
-    await tester.pumpAndSettle();
+    // Top-left close button dismisses the product.
+    await tap(tester, find.byTooltip('Ürünü kapat'));
+    expect(find.text('NVIDIA GeForce RTX 4070 Super'), findsNothing);
+    expect(find.byTooltip('Ürünü kapat'), findsNothing);
     expect(find.text('SON ARAMALAR'), findsOneWidget);
     expect(find.text('rtx 4070 super'), findsOneWidget);
   });
