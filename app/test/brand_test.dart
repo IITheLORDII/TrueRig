@@ -7,12 +7,12 @@ import 'package:darbogaz/app.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
 
+import 'support.dart';
+
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('splash shows the brand, then opens the device tab', (
-    tester,
-  ) async {
+  testWidgets('splash shows the brand, then opens Cihazlarım', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [selfDeviceIdProvider.overrideWith((ref) async => null)],
@@ -25,22 +25,15 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.text(kAppTagline), findsNothing);
-    expect(find.text('Cihazım'), findsOneWidget);
+    expect(find.text('PC ekle'), findsOneWidget);
   });
 
-  testWidgets('every tab shows the logo and name in the app bar', (
+  testWidgets('every tab shows the logo, name and profile button', (
     tester,
   ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [selfDeviceIdProvider.overrideWith((ref) async => null)],
-        child: const DarbogazApp(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    for (final tab in ['Cihaz', 'Performans', 'Fiyat', 'Profil']) {
-      await tester.tap(find.text(tab).last);
-      await tester.pumpAndSettle();
+    await pumpApp(tester);
+    for (final tab in ['Cihazlarım', 'Analiz', 'Karşılaştır', 'Fiyat']) {
+      await openTab(tester, tab);
       final bar = find.byType(AppBar);
       expect(
         find.descendant(of: bar, matching: find.byType(TrueRigMark)),
@@ -52,6 +45,18 @@ void main() {
         findsOneWidget,
         reason: tab,
       );
+      expect(find.byTooltip('Profil ve ayarlar'), findsOneWidget, reason: tab);
     }
+  });
+
+  testWidgets('home and Analiz survive large text (accessibility)', (
+    tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await pumpApp(tester);
+    expect(tester.takeException(), isNull);
+    await openTab(tester, 'Analiz');
+    expect(tester.takeException(), isNull);
   });
 }

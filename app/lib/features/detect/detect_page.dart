@@ -63,7 +63,7 @@ class _DetectPageState extends ConsumerState<DetectPage> {
     ref.read(detectionProvider.notifier).applyToBuild();
     // Bottleneck analysis needs a GPU; otherwise let the user pick one.
     ref.read(activeDeviceProvider.notifier).set(DeviceKind.pc);
-    context.go(hasGpu ? '/performance' : '/device');
+    context.go(hasGpu ? '/analysis' : '/devices/pc');
   }
 
   @override
@@ -77,7 +77,7 @@ class _DetectPageState extends ConsumerState<DetectPage> {
           if (detection == null)
             _ConsentCard(
               onDetect: _detectBrowser,
-              onSkip: () => context.go('/device'),
+              onSkip: () => context.go('/home'),
             )
           else
             _ResultCard(state: detection, onContinue: _continue),
@@ -266,7 +266,7 @@ class _ResultCard extends ConsumerWidget {
             ),
           ),
           TextButton(
-            onPressed: () => context.go('/device'),
+            onPressed: () => context.go('/home'),
             child: const Text('Başka bir sistemi sorgula'),
           ),
         ],

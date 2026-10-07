@@ -23,7 +23,7 @@ class WatchPanel extends ConsumerWidget {
             'Akıllı saatini seç; telefonunla uyumunu, pil ömrünü ve '
             'özelliklerini gösterelim.',
         action: FilledButton.icon(
-          onPressed: () => context.push('/device/watch'),
+          onPressed: () => context.push('/pick/watch'),
           icon: const Icon(Icons.search_rounded),
           label: const Text('Saat seç'),
         ),
@@ -77,9 +77,7 @@ class WatchPanel extends ConsumerWidget {
                   : (report.isCompatible ? palette.good : palette.bad),
             ),
             onTap: () async {
-              final picked = await context.push<Phone>(
-                '/device/phone?mode=pair',
-              );
+              final picked = await context.push<Phone>('/pick/phone?mode=pair');
               if (picked != null) {
                 ref.read(watchSelectionProvider.notifier).pairWith(picked);
               }
@@ -87,20 +85,17 @@ class WatchPanel extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () => context.push('/device/watch'),
-              icon: const Icon(Icons.swap_horiz_rounded),
-              label: const Text('Değiştir'),
-            ),
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: () => context.go('/performance'),
-              icon: const Icon(Icons.insights_rounded),
-              label: const Text('Ayrıntılar'),
-            ),
-          ],
+        ActionRow(
+          secondary: TextButton.icon(
+            onPressed: () => context.push('/pick/watch'),
+            icon: const Icon(Icons.swap_horiz_rounded),
+            label: const Text('Değiştir'),
+          ),
+          primary: FilledButton.icon(
+            onPressed: () => context.go('/analysis'),
+            icon: const Icon(Icons.insights_rounded),
+            label: const Text('Ayrıntılar'),
+          ),
         ),
       ],
     );

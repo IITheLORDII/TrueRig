@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/features/device/device_page.dart';
 import 'package:darbogaz/features/builder/part_picker_page.dart';
 import 'package:darbogaz/features/builder/prebuilt_picker_page.dart';
 import 'package:darbogaz/features/compare/compare_page.dart';
 import 'package:darbogaz/features/detect/detect_page.dart';
+import 'package:darbogaz/features/home/home_page.dart';
 import 'package:darbogaz/features/performance/performance_page.dart';
 import 'package:darbogaz/features/phone/phone_picker_page.dart';
 import 'package:darbogaz/features/prices/prices_page.dart';
@@ -19,73 +21,66 @@ import 'package:darbogaz/features/watch/watch_pages.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 
+/// Full-screen routes on the root navigator (over the tab bar).
+GoRoute _page(String path, Widget Function(GoRouterState s) build) => GoRoute(
+  path: path,
+  parentNavigatorKey: _rootKey,
+  builder: (_, state) => build(state),
+);
+
+bool _returns(GoRouterState s) => s.uri.queryParameters['mode'] == 'return';
+
 GoRouter createRouter() => GoRouter(
   navigatorKey: _rootKey,
-  // The website opens on hardware detection; the apps open on "Cihaz".
   initialLocation: '/splash',
   routes: [
+    // The website opens on hardware detection; the apps on "Cihazlarım".
+    _page('/splash', (_) => SplashPage(next: kIsWeb ? '/detect' : '/home')),
+    _page(
+      '/detect',
+      (s) => DetectPage(initialCode: s.uri.queryParameters['hw']),
+    ),
+    _page('/profile', (_) => const ProfilePage()),
     GoRoute(
-      path: '/splash',
-      builder: (_, _) => SplashPage(next: kIsWeb ? '/detect' : '/device'),
+      path: '/devices/:kind',
+      parentNavigatorKey: _rootKey,
+      redirect: (_, s) => _kindFrom(s) == null ? '/home' : null,
+      builder: (_, s) => DeviceEditorPage(kind: _kindFrom(s)!),
     ),
     GoRoute(
-      path: '/detect',
-      builder: (_, state) =>
-          DetectPage(initialCode: state.uri.queryParameters['hw']),
+      path: '/pick/part/:category',
+      parentNavigatorKey: _rootKey,
+      redirect: (_, s) => _categoryFrom(s) == null ? '/home' : null,
+      builder: (_, s) =>
+          PartPickerPage(category: _categoryFrom(s)!, returnMode: _returns(s)),
     ),
-    GoRoute(path: '/compare', builder: (_, _) => const ComparePage()),
-    // v1 addresses (bookmarks, shared links).
-    GoRoute(path: '/build', redirect: (_, _) => '/device'),
-    GoRoute(path: '/analysis', redirect: (_, _) => '/performance'),
+    _page(
+      '/pick/phone',
+      (s) => PhonePickerPage(mode: s.uri.queryParameters['mode']),
+    ),
+    _page('/pick/watch', (s) => WatchPickerPage(returnMode: _returns(s))),
+    _page('/pick/prebuilt', (s) => PrebuiltPickerPage(returnMode: _returns(s))),
+    // Older addresses (bookmarks, shared links).
+    GoRoute(path: '/build', redirect: (_, _) => '/home'),
+    GoRoute(path: '/device', redirect: (_, _) => '/home'),
+    GoRoute(path: '/performance', redirect: (_, _) => '/analysis'),
     StatefulShellRoute.indexedStack(
       builder: (context, state, shell) => _Shell(shell: shell),
       branches: [
         StatefulShellBranch(
+          routes: [GoRoute(path: '/home', builder: (_, _) => const HomePage())],
+        ),
+        StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/device',
-              builder: (_, _) => const DevicePage(),
-              routes: [
-                GoRoute(
-                  path: 'pick/:category',
-                  parentNavigatorKey: _rootKey,
-                  redirect: (_, state) =>
-                      _categoryFrom(state) == null ? '/device' : null,
-                  builder: (_, state) => PartPickerPage(
-                    category: _categoryFrom(state)!,
-                    returnMode: state.uri.queryParameters['mode'] == 'return',
-                  ),
-                ),
-                GoRoute(
-                  path: 'phone',
-                  parentNavigatorKey: _rootKey,
-                  builder: (_, state) =>
-                      PhonePickerPage(mode: state.uri.queryParameters['mode']),
-                ),
-                GoRoute(
-                  path: 'watch',
-                  parentNavigatorKey: _rootKey,
-                  builder: (_, state) => WatchPickerPage(
-                    returnMode: state.uri.queryParameters['mode'] == 'return',
-                  ),
-                ),
-                GoRoute(
-                  path: 'prebuilt',
-                  parentNavigatorKey: _rootKey,
-                  builder: (_, state) => PrebuiltPickerPage(
-                    returnMode: state.uri.queryParameters['mode'] == 'return',
-                  ),
-                ),
-              ],
+              path: '/analysis',
+              builder: (_, _) => const PerformancePage(),
             ),
           ],
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/performance',
-              builder: (_, _) => const PerformancePage(),
-            ),
+            GoRoute(path: '/compare', builder: (_, _) => const ComparePage()),
           ],
         ),
         StatefulShellBranch(
@@ -105,15 +100,18 @@ GoRouter createRouter() => GoRouter(
             ),
           ],
         ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(path: '/profile', builder: (_, _) => const ProfilePage()),
-          ],
-        ),
       ],
     ),
   ],
 );
+
+DeviceKind? _kindFrom(GoRouterState state) {
+  final name = state.pathParameters['kind'];
+  for (final k in DeviceKind.values) {
+    if (k.name == name) return k;
+  }
+  return null;
+}
 
 /// Validates the path parameter against known categories (deep-link safe).
 PartCategory? _categoryFrom(GoRouterState state) {
@@ -130,10 +128,14 @@ class _Shell extends StatelessWidget {
   final StatefulNavigationShell shell;
 
   static const _tabs = [
-    AppTab('Cihaz', Icons.devices_outlined, Icons.devices_rounded),
-    AppTab('Performans', Icons.speed_outlined, Icons.speed_rounded),
+    AppTab('Cihazlarım', Icons.devices_outlined, Icons.devices_rounded),
+    AppTab('Analiz', Icons.insights_outlined, Icons.insights_rounded),
+    AppTab(
+      'Karşılaştır',
+      Icons.compare_arrows_outlined,
+      Icons.compare_arrows_rounded,
+    ),
     AppTab('Fiyat', Icons.sell_outlined, Icons.sell_rounded),
-    AppTab('Profil', Icons.person_outline_rounded, Icons.person_rounded),
   ];
 
   @override

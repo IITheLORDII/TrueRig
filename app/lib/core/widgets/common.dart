@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
 
-/// Titled card used for every result block.
+/// Titled card used for every result block. [hero] adds the brand gradient
+/// border; use it for the one key result on a screen.
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
@@ -10,49 +13,80 @@ class SectionCard extends StatelessWidget {
     required this.child,
     this.icon,
     this.trailing,
+    this.hero = false,
   });
 
   final String title;
   final Widget child;
   final IconData? icon;
   final Widget? trailing;
+  final bool hero;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, size: 20, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                ],
-                Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+    final content = Padding(
+      padding: const EdgeInsets.all(Space.m),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: Space.s),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                ?trailing,
-              ],
-            ),
-            const SizedBox(height: 8),
-            child,
-          ],
-        ),
+              ),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: Space.s),
+          child,
+        ],
       ),
     );
+    if (!hero) return Card(child: content);
+    return HeroFrame(child: content);
   }
 }
 
-/// Horizontal bar with a value label, e.g. FPS or a 0-100 score.
+/// Card with a 1.5 px cyan → violet gradient border.
+class HeroFrame extends StatelessWidget {
+  const HeroFrame({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(Radii.l),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [kBrandCyan, kBrandViolet],
+      ),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(1.5),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(Radii.l - 1.5),
+        ),
+        child: child,
+      ),
+    ),
+  );
+}
+
+/// Single-line metric: name (+ optional note) · inline bar · value.
 class MetricBar extends StatelessWidget {
   const MetricBar({
     super.key,
@@ -76,42 +110,57 @@ class MetricBar extends StatelessWidget {
     final theme = Theme.of(context);
     final barColor = color ?? theme.colorScheme.primary;
     final fraction = max <= 0 ? 0.0 : (value / max).clamp(0.0, 1.0);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
-              Text(valueText, style: numberStyle(context, size: 14)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: fraction),
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeOutCubic,
-              builder: (_, v, _) => LinearProgressIndicator(
-                value: v,
-                minHeight: 7,
-                color: barColor,
-                backgroundColor: context.palette.surfaceAlt,
+    return Semantics(
+      label: '$label: $valueText',
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: Space.xs),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.bodyMedium),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: context.palette.muted,
+                      ),
+                    ),
+                ],
               ),
             ),
-          ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 4),
-            Text(
-              subtitle!,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: context.palette.muted,
+            const SizedBox(width: Space.s),
+            SizedBox(
+              width: kInlineBarWidth,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(Radii.s),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: fraction),
+                  duration: Motion.slow,
+                  curve: Curves.easeOutCubic,
+                  builder: (_, v, _) => LinearProgressIndicator(
+                    value: v,
+                    minHeight: 6,
+                    color: barColor,
+                    backgroundColor: context.palette.surfaceAlt,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: Space.s),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 64),
+              child: Text(
+                valueText,
+                textAlign: TextAlign.end,
+                style: numberStyle(context, size: 13),
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -126,48 +175,119 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: 3),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withValues(alpha: 0.5)),
+      color: color.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(Radii.l),
     ),
     child: Text(
       text,
-      style: Theme.of(context).textTheme.labelMedium
+      style: Theme.of(context).textTheme.labelSmall
           ?.copyWith(color: color, fontWeight: FontWeight.w700),
     ),
   );
 }
 
-/// Placeholder shown when CPU/GPU are not chosen yet.
-class EmptyHint extends StatelessWidget {
-  const EmptyHint({
+enum Tone { good, warn, bad, neutral, brand }
+
+/// Status label with one meaning per colour across the app.
+class VerdictChip extends StatelessWidget {
+  const VerdictChip(this.text, {super.key, this.tone = Tone.neutral});
+
+  final String text;
+  final Tone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final color = switch (tone) {
+      Tone.good => p.good,
+      Tone.warn => p.warn,
+      Tone.bad => p.bad,
+      Tone.neutral => p.muted,
+      Tone.brand => Theme.of(context).colorScheme.primary,
+    };
+    return StatusPill(text: text, color: color);
+  }
+}
+
+/// Small uppercase heading above a group of rows.
+class SectionHeader extends StatelessWidget {
+  const SectionHeader(this.text, {super.key, this.trailing});
+
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(Space.xs, Space.m, Space.xs, Space.s),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            text.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: context.palette.muted,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        ?trailing,
+      ],
+    ),
+  );
+}
+
+/// Grey placeholder bar shown while content loads.
+class SkeletonBar extends StatelessWidget {
+  const SkeletonBar({
     super.key,
-    required this.icon,
-    required this.message,
-    this.action,
+    this.width = double.infinity,
+    this.height = 14,
   });
 
-  final IconData icon;
+  final double width;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: width,
+    height: height,
+    margin: const EdgeInsets.symmetric(vertical: Space.xs),
+    decoration: BoxDecoration(
+      color: context.palette.surfaceAlt,
+      borderRadius: BorderRadius.circular(Radii.s),
+    ),
+  );
+}
+
+/// Empty / first-use state. Without an [icon] the TrueRig mark is shown.
+class EmptyHint extends StatelessWidget {
+  const EmptyHint({super.key, this.icon, required this.message, this.action});
+
+  final IconData? icon;
   final String message;
   final Widget? action;
 
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(Space.xl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 56, color: context.palette.muted),
-          const SizedBox(height: 16),
+          if (icon == null)
+            const Opacity(opacity: 0.8, child: TrueRigMark(size: 56))
+          else
+            Icon(icon, size: 48, color: context.palette.muted),
+          const SizedBox(height: Space.l),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge,
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          if (action != null) ...[const SizedBox(height: 16), action!],
+          if (action != null) ...[const SizedBox(height: Space.l), action!],
         ],
       ),
     ),
@@ -177,3 +297,22 @@ class EmptyHint extends StatelessWidget {
 const String kEstimateDisclaimer =
     'Değerler bağımsız testlerle kalibre edilmiş tahminlerdir; sürücü, '
     'oyun yaması, sahne ve sistem ayarlarına göre farklılık gösterebilir.';
+
+/// Secondary action on the left, primary on the right; stacks vertically
+/// (primary first) when the row does not fit (narrow screens, large text).
+class ActionRow extends StatelessWidget {
+  const ActionRow({super.key, this.secondary, this.primary});
+
+  final Widget? secondary;
+  final Widget? primary;
+
+  @override
+  Widget build(BuildContext context) => OverflowBar(
+    alignment: MainAxisAlignment.spaceBetween,
+    overflowAlignment: OverflowBarAlignment.end,
+    overflowDirection: VerticalDirection.up,
+    spacing: Space.s,
+    overflowSpacing: Space.xs,
+    children: [?secondary, ?primary],
+  );
+}

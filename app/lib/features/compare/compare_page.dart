@@ -7,7 +7,9 @@ import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/builder/prebuilt_picker_page.dart';
 import 'package:darbogaz/features/compare/compare_metrics.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -21,6 +23,8 @@ class ComparePage extends ConsumerStatefulWidget {
 }
 
 class _ComparePageState extends ConsumerState<ComparePage> {
+  /// Own device-type choice; starts at the active device.
+  DeviceKind? _kind;
   PickedSystem? _otherPc;
   Phone? _otherPhone;
   Watch? _otherWatch;
@@ -37,14 +41,14 @@ class _ComparePageState extends ConsumerState<ComparePage> {
     if (!mounted || how == null) return;
     if (how == 'prebuilt') {
       final picked = await context.push<PickedSystem>(
-        '/device/prebuilt?mode=return',
+        '/pick/prebuilt?mode=return',
       );
       if (picked != null) setState(() => _otherPc = picked);
       return;
     }
-    final cpu = await context.push<Part>('/device/pick/cpu?mode=return');
+    final cpu = await context.push<Part>('/pick/part/cpu?mode=return');
     if (!mounted || cpu is! Cpu) return;
-    final gpu = await context.push<Part>('/device/pick/gpu?mode=return');
+    final gpu = await context.push<Part>('/pick/part/gpu?mode=return');
     if (!mounted || gpu is! Gpu) return;
     // Same RAM as the user's PC keeps the comparison about CPU + GPU.
     var build = PcBuild(cpu: cpu, gpu: gpu);
@@ -60,18 +64,18 @@ class _ComparePageState extends ConsumerState<ComparePage> {
   }
 
   Future<void> _pickPhone() async {
-    final p = await context.push<Phone>('/device/phone?mode=compare');
+    final p = await context.push<Phone>('/pick/phone?mode=compare');
     if (p != null) setState(() => _otherPhone = p);
   }
 
   Future<void> _pickWatch() async {
-    final w = await context.push<Watch>('/device/watch?mode=return');
+    final w = await context.push<Watch>('/pick/watch?mode=return');
     if (w != null) setState(() => _otherWatch = w);
   }
 
   @override
   Widget build(BuildContext context) {
-    final kind = ref.watch(activeDeviceProvider);
+    final DeviceKind kind = _kind ?? ref.watch(activeDeviceProvider);
     final (
       String? mine,
       String? other,
@@ -84,18 +88,33 @@ class _ComparePageState extends ConsumerState<ComparePage> {
     };
 
     return Scaffold(
-      appBar: AppBar(title: BrandTitle('Karşılaştır · ${kind.label}')),
+      appBar: AppBar(
+        title: const BrandTitle('Karşılaştır'),
+        actions: const [ProfileAction()],
+      ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          Space.page,
+          Space.xs,
+          Space.page,
+          Space.xl,
+        ),
         children: [
+          AppSegmented<DeviceKind>(
+            values: DeviceKind.values,
+            selected: kind,
+            labelOf: (k) => k.label,
+            onChanged: (k) => setState(() => _kind = k),
+          ),
+          const SizedBox(height: Space.s),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: _SideCard(
                   caption: 'Benim',
-                  name: mine ?? 'Önce Cihaz sekmesinden seç',
-                  onTap: mine == null ? () => context.go('/device') : null,
+                  name: mine ?? "Önce Cihazlarım'dan ekle",
+                  onTap: mine == null ? () => context.go('/home') : null,
                 ),
               ),
               const Padding(

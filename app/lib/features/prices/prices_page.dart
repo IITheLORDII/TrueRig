@@ -9,7 +9,9 @@ import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
@@ -34,6 +36,27 @@ final priceSearchProvider = FutureProvider.family<PriceSearchResult, String>((
 });
 
 final _priceFormat = NumberFormat.decimalPattern('tr');
+
+const _recentKey = 'prices.recent';
+const _maxRecent = 8;
+
+/// Last searches, newest first (persisted).
+final recentSearchesProvider = NotifierProvider<RecentSearches, List<String>>(
+  RecentSearches.new,
+);
+
+class RecentSearches extends Notifier<List<String>> {
+  @override
+  List<String> build() =>
+      ref.read(prefsProvider)?.getStringList(_recentKey) ?? const [];
+
+  void add(String q) {
+    if (q.isEmpty) return;
+    final next = [q, ...state.where((e) => e != q)].take(_maxRecent).toList();
+    state = List.unmodifiable(next);
+    ref.read(prefsProvider)?.setStringList(_recentKey, next);
+  }
+}
 
 class PricesPage extends ConsumerStatefulWidget {
   const PricesPage({super.key, this.initialQuery = ''});
@@ -68,6 +91,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
     final q = sanitizeQuery(raw);
     _controller.text = q;
     setState(() => _query = q);
+    ref.read(recentSearchesProvider.notifier).add(q);
   }
 
   Future<void> _scan() async {
@@ -85,7 +109,10 @@ class _PricesPageState extends ConsumerState<PricesPage> {
     final query = match == null ? _query : (match.mpn ?? match.displayName);
 
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('Fiyat & Nerede Bulunur')),
+      appBar: AppBar(
+        title: const BrandTitle('Fiyat & Nerede Bulunur'),
+        actions: const [ProfileAction()],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
@@ -106,15 +133,49 @@ class _PricesPageState extends ConsumerState<PricesPage> {
             ),
           ),
           const SizedBox(height: 12),
-          if (_query.isEmpty)
-            _BuildShortcuts(pcBuild: build, onPick: _setQuery)
-          else ...[
+          if (_query.isEmpty) ...[
+            _RecentSearches(onPick: _setQuery),
+            _BuildShortcuts(pcBuild: build, onPick: _setQuery),
+          ] else ...[
             if (match != null) _MatchCard(part: match),
             const SizedBox(height: 12),
             _LiveOffers(query: query, showImage: match == null),
             const SizedBox(height: 12),
             _StoreLinks(query: query),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentSearches extends ConsumerWidget {
+  const _RecentSearches({required this.onPick});
+
+  final ValueChanged<String> onPick;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final recent = ref.watch(recentSearchesProvider);
+    if (recent.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Space.s),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SectionHeader('Son aramalar'),
+          Wrap(
+            spacing: Space.s,
+            runSpacing: Space.s,
+            children: [
+              for (final q in recent)
+                ActionChip(
+                  avatar: const Icon(Icons.history_rounded, size: 16),
+                  label: Text(q, overflow: TextOverflow.ellipsis),
+                  onPressed: () => onPick(q),
+                ),
+            ],
+          ),
         ],
       ),
     );
@@ -261,7 +322,9 @@ class _LiveOffers extends ConsumerWidget {
       title: 'Güncel fiyatlar',
       icon: Icons.local_offer_rounded,
       child: result.when(
-        loading: () => const LinearProgressIndicator(),
+        loading: () => const Column(
+          children: [SkeletonBar(), SkeletonBar(width: 220), SkeletonBar()],
+        ),
         error: (e, _) => Text(
           e is PriceApiException ? e.message : 'Fiyatlar alınamadı.',
           style: TextStyle(color: palette.bad),

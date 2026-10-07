@@ -6,6 +6,7 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 
@@ -77,22 +78,21 @@ class PcPanel extends ConsumerWidget {
             ),
           ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            if (build.parts.isNotEmpty)
-              TextButton.icon(
-                onPressed: () => ref.read(buildProvider.notifier).reset(),
-                icon: const Icon(Icons.restart_alt_rounded),
-                label: const Text('Temizle'),
-              ),
-            const Spacer(),
-            if (build.cpu != null && build.gpu != null)
-              FilledButton.icon(
-                onPressed: () => context.go('/performance'),
-                icon: const Icon(Icons.speed_rounded),
-                label: const Text('Darboğazı Analiz Et'),
-              ),
-          ],
+        ActionRow(
+          secondary: build.parts.isEmpty
+              ? null
+              : TextButton.icon(
+                  onPressed: () => ref.read(buildProvider.notifier).reset(),
+                  icon: const Icon(Icons.restart_alt_rounded),
+                  label: const Text('Temizle'),
+                ),
+          primary: build.cpu == null || build.gpu == null
+              ? null
+              : FilledButton.icon(
+                  onPressed: () => context.go('/analysis'),
+                  icon: const Icon(Icons.speed_rounded),
+                  label: const Text('Darboğazı Analiz Et'),
+                ),
         ),
       ],
     );
@@ -142,7 +142,7 @@ class _PrebuiltCard extends ConsumerWidget {
                   ref.read(buildProvider.notifier).reset();
                 },
               ),
-        onTap: () => context.push('/device/prebuilt'),
+        onTap: () => context.push('/pick/prebuilt'),
       ),
     );
   }
@@ -277,7 +277,7 @@ class _SlotTile extends ConsumerWidget {
                 onPressed: () =>
                     ref.read(buildProvider.notifier).clear(category),
               ),
-        onTap: () => context.push('/device/pick/${category.name}'),
+        onTap: () => context.push('/pick/part/${category.name}'),
       ),
     );
   }

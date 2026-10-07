@@ -29,7 +29,7 @@ class PcSummaryView extends ConsumerWidget {
             icon: Icons.speed_rounded,
             message: 'Darboğaz hesabı için en az işlemci ve ekran kartı seç.',
             action: FilledButton(
-              onPressed: () => context.go('/device'),
+              onPressed: () => context.go('/home'),
               child: const Text('Sistemi Kur'),
             ),
           )
@@ -65,6 +65,7 @@ class _BottleneckCard extends StatelessWidget {
     final maxCap = e.cpuCapFps > e.gpuCapFps ? e.cpuCapFps : e.gpuCapFps;
 
     return SectionCard(
+      hero: true,
       title: e.game.name,
       icon: Icons.speed_rounded,
       trailing: e.game.isProjection

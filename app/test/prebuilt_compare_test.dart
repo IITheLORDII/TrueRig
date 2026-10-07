@@ -50,15 +50,15 @@ void main() {
     tester,
   ) async {
     await _pump(tester, await _prefs({}));
-    await _tap(tester, find.text('Hazır sistem seç (isteğe bağlı)'));
+    await _tap(tester, find.text('Hazır sistem seç'));
     await _search(tester, 'G770');
     await _tap(tester, find.text('Casper Excalibur G770'));
     await _tap(tester, find.text('i7-12700H · RTX 4060 · 16 GB'));
 
-    expect(
-      find.textContaining('Casper Excalibur G770 · i7-12700H'),
-      findsOneWidget,
-    );
+    // Back on Cihazlarım: the PC card carries the system name.
+    final card = find.textContaining('Casper Excalibur G770 · i7-12700H');
+    expect(card, findsOneWidget);
+    await _tap(tester, card);
     expect(find.text('Intel Core i7-12700H'), findsOneWidget);
     expect(find.text('NVIDIA GeForce RTX 4060 Laptop GPU'), findsOneWidget);
     // Laptop: no board / case / PSU slots.
@@ -68,13 +68,14 @@ void main() {
 
   testWidgets('a pasted listing title fills CPU, GPU and RAM', (tester) async {
     await _pump(tester, await _prefs({}));
-    await _tap(tester, find.text('Hazır sistem seç (isteğe bağlı)'));
+    await _tap(tester, find.text('Hazır sistem seç'));
     await _search(
       tester,
       'Gaming PC AMD Ryzen 5 7600 RX 7600 16GB DDR5 6000MHz 1TB NVMe',
     );
     expect(find.text('Başlıktan bulunanlar'), findsOneWidget);
     await _tap(tester, find.text('Bununla doldur'));
+    await _tap(tester, find.textContaining('Gaming PC AMD Ryzen 5 7600'));
     expect(find.text('AMD Ryzen 5 7600'), findsOneWidget);
     expect(find.text('AMD Radeon RX 7600'), findsOneWidget);
     expect(find.textContaining('16GB (2x8) DDR5-6000'), findsOneWidget);
@@ -88,8 +89,13 @@ void main() {
         'phone.selection': ['iphone-13', 'a15-4gpu', '4'],
       }),
     );
-    await _tap(tester, find.byTooltip('Karşılaştır'));
-    expect(find.text('Karşılaştır · Telefon'), findsOneWidget);
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Karşılaştır'),
+      ),
+    );
     await _tap(tester, find.text('Ekle'));
     await _search(tester, 'iPhone 16 Pro');
     await _tap(tester, find.text('Apple iPhone 16 Pro'));
@@ -107,7 +113,13 @@ void main() {
         'pc.build': ['r5-5600', 'rtx-3060-12', 'kingston-ddr4-3200-32'],
       }),
     );
-    await _tap(tester, find.byTooltip('Karşılaştır'));
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Karşılaştır'),
+      ),
+    );
     await _tap(tester, find.text('Ekle'));
     await _tap(tester, find.text('İşlemci ve ekran kartı seç'));
     await _search(tester, '7800X3D');
@@ -132,7 +144,13 @@ void main() {
         'watch.selection': ['gw-7', ''],
       }),
     );
-    await _tap(tester, find.byTooltip('Karşılaştır'));
+    await _tap(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Karşılaştır'),
+      ),
+    );
     await _tap(tester, find.text('Ekle'));
     await _search(tester, 'Series 10');
     await _tap(tester, find.text('Apple Watch Series 10'));

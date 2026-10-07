@@ -32,7 +32,7 @@ class PhonePanel extends ConsumerWidget {
                 'Telefonunu seç; oyun FPS\'i, uygulama performansı ve '
                 'telefonda çalışan yapay zekâ hızını hesaplayalım.',
             action: FilledButton.icon(
-              onPressed: () => context.push('/device/phone'),
+              onPressed: () => context.push('/pick/phone'),
               icon: const Icon(Icons.search_rounded),
               label: const Text('Telefon seç'),
             ),
@@ -126,13 +126,14 @@ class _SelectedPhoneCard extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     StatusPill(
                       text: summary.tier.label,
                       color: theme.colorScheme.primary,
                     ),
-                    const SizedBox(width: 8),
                     StatusPill(
                       text: 'Güncelleme: ${p.platform.label} ${p.maxOsMajor}',
                       color: palette.muted,
@@ -162,20 +163,17 @@ class _SelectedPhoneCard extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            TextButton.icon(
-              onPressed: () => context.push('/device/phone'),
-              icon: const Icon(Icons.swap_horiz_rounded),
-              label: const Text('Değiştir'),
-            ),
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: () => context.go('/performance'),
-              icon: const Icon(Icons.insights_rounded),
-              label: const Text('Performansı gör'),
-            ),
-          ],
+        ActionRow(
+          secondary: TextButton.icon(
+            onPressed: () => context.push('/pick/phone'),
+            icon: const Icon(Icons.swap_horiz_rounded),
+            label: const Text('Değiştir'),
+          ),
+          primary: FilledButton.icon(
+            onPressed: () => context.go('/analysis'),
+            icon: const Icon(Icons.insights_rounded),
+            label: const Text('Performansı gör'),
+          ),
         ),
       ],
     );

@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:perf_engine/perf_engine.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:darbogaz/app.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
-import 'package:darbogaz/features/detect/self_device.dart';
+import 'package:darbogaz/features/home/home_page.dart';
+import 'package:darbogaz/features/performance/performance_page.dart';
 
-/// Pre-filled build so the flow does not depend on tapping through pickers.
+import 'support.dart';
+
+/// Mismatched AM4 CPU on an AM5 board with an RTX 4090 (CPU bound).
 class _SeededBuild extends BuildController {
   @override
   PcBuild build() {
@@ -23,142 +25,113 @@ class _SeededBuild extends BuildController {
   }
 }
 
-Future<void> _pump(
-  WidgetTester tester, {
-  bool seeded = false,
-  String? selfId,
-  SharedPreferences? prefs,
-}) async {
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        if (seeded) buildProvider.overrideWith(_SeededBuild.new),
-        selfDeviceIdProvider.overrideWith((ref) async => selfId),
-        if (prefs != null) prefsProvider.overrideWithValue(prefs),
-      ],
-      child: const DarbogazApp(),
-    ),
-  );
-  await tester.pumpAndSettle();
-}
-
-Future<void> _tapText(WidgetTester tester, String text) async {
-  final f = find.text(text);
-  if (f.evaluate().isEmpty) {
-    // Lazily built list items: scroll the main list until it appears.
-    await tester.scrollUntilVisible(
-      f,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-  }
-  await tester.ensureVisible(f.first);
-  await tester.tap(f.first);
-  await tester.pumpAndSettle();
-}
-
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('device tab: PC is default with compact slots', (tester) async {
-    await _pump(tester);
-    expect(find.text('Cihazım'), findsOneWidget);
-    for (final t in ['PC', 'Telefon', 'Saat', 'İşlemci', 'Ekran Kartı']) {
-      expect(find.text(t), findsWidgets, reason: t);
+  testWidgets('home lists the three devices as empty cards', (tester) async {
+    await pumpApp(tester);
+    expect(find.text('Cihazlarım'), findsWidgets);
+    for (final t in ['PC ekle', 'Telefon ekle', 'Saat ekle']) {
+      expect(find.text(t), findsOneWidget, reason: t);
     }
-    expect(find.text('Hazır sistem seç (isteğe bağlı)'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Diğer parçalar'),
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
+    expect(find.text('Hazır sistem seç'), findsOneWidget);
+  });
+
+  testWidgets('PC: add a CPU from the editor', (tester) async {
+    await pumpApp(tester);
+    await tapText(tester, 'PC ekle');
+    expect(find.text('PC sistemim'), findsOneWidget);
     expect(find.text('Diğer parçalar'), findsOneWidget);
     expect(find.text('Kasa'), findsNothing); // collapsed
-  });
-
-  testWidgets('picking a CPU fills the slot', (tester) async {
-    await _pump(tester);
-    await _tapText(tester, 'İşlemci');
-    await tester.enterText(find.byType(TextField), '7800X3D');
-    await tester.pumpAndSettle();
-    await _tapText(tester, 'AMD Ryzen 7 7800X3D');
+    await tapText(tester, 'İşlemci');
+    await search(tester, '7800X3D');
+    await tapText(tester, 'AMD Ryzen 7 7800X3D');
     expect(find.text('AMD Ryzen 7 7800X3D'), findsOneWidget);
-    expect(find.text('Cihazım'), findsOneWidget);
+    expect(find.text('PC sistemim'), findsOneWidget);
   });
 
-  testWidgets('PC: mismatch banner, analysis and performance sections', (
-    tester,
-  ) async {
-    await _pump(tester, seeded: true);
-    expect(find.textContaining('uyumsuzluk var'), findsOneWidget);
-    await _tapText(tester, 'Darboğazı Analiz Et');
-    expect(find.text('Performans · PC'), findsOneWidget);
+  testWidgets('PC card shows the verdict and opens Analiz', (tester) async {
+    await pumpApp(tester, build: _SeededBuild.new);
+    expect(find.text('Uyumsuz'), findsOneWidget);
+    expect(find.text('Darboğaz · İşlemci'), findsOneWidget);
+    await tapText(tester, 'Analiz');
     expect(find.text('İşlemci sınırlıyor'), findsOneWidget);
 
-    await _tapText(tester, 'Oyun');
+    await tapText(tester, 'Oyun');
     expect(find.text('Counter-Strike 2'), findsOneWidget);
-    await _tapText(tester, 'Uygulama');
+    await tapText(tester, 'Uygulama');
     expect(find.text('SolidWorks'), findsOneWidget);
-    await _tapText(tester, 'AI');
+    await tapText(tester, 'AI');
     expect(find.text('Qwen3 8B'), findsOneWidget);
   });
 
-  testWidgets('phone: pick from catalog, see score and mobile games', (
-    tester,
-  ) async {
-    await _pump(tester);
-    await _tapText(tester, 'Telefon');
-    await _tapText(tester, 'Telefon seç');
-    await tester.enterText(find.byType(TextField), 'iPhone 15 Pro');
-    await tester.pumpAndSettle();
-    await _tapText(tester, 'Apple iPhone 15 Pro');
-    expect(find.text('Apple iPhone 15 Pro'), findsOneWidget);
+  testWidgets('phone: add from catalog, then analyse', (tester) async {
+    await pumpApp(tester);
+    await tapText(tester, 'Telefon ekle');
+    expect(find.text('Telefonum'), findsOneWidget);
+    await tapText(tester, 'Telefon seç');
+    await search(tester, 'iPhone 15 Pro');
+    await tapText(tester, 'Apple iPhone 15 Pro');
     expect(find.text('Amiral gemisi'), findsOneWidget);
 
-    await _tapText(tester, 'Performansı gör');
-    expect(find.text('Performans · Telefon'), findsOneWidget);
-    await _tapText(tester, 'Oyun');
+    await tapText(tester, 'Performansı gör');
+    expect(find.byType(PerformancePage), findsOneWidget);
+    expect(find.text('Apple iPhone 15 Pro'), findsWidgets); // device chip
+    await tapText(tester, 'Oyun');
     expect(find.text('Genshin Impact'), findsOneWidget);
   });
 
-  testWidgets('phone: the running device is recognised and selectable', (
+  testWidgets('home offers the running phone as a quick action', (
     tester,
   ) async {
-    await _pump(tester, selfId: 'SM-S921B');
-    await _tapText(tester, 'Telefon');
-    expect(find.text('Bu telefon: Samsung Galaxy S24'), findsOneWidget);
-    await _tapText(tester, 'Seç');
-    expect(find.textContaining('Exynos 2400'), findsOneWidget);
+    await pumpApp(tester, selfId: 'SM-S921B');
+    await tapText(tester, 'Bu telefon: Galaxy S24');
+    expect(find.text('Samsung Galaxy S24'), findsOneWidget);
     expect(find.textContaining('Bu telefon:'), findsNothing);
   });
 
   testWidgets('watch: compatible with iPhone, not with an Android phone', (
     tester,
   ) async {
-    SharedPreferences.setMockInitialValues({
-      'phone.selection': ['iphone-15-pro', 'a17-pro', '8'],
-    });
-    final prefs = await SharedPreferences.getInstance();
-    await _pump(tester, prefs: prefs);
-    await _tapText(tester, 'Saat');
-    await _tapText(tester, 'Saat seç');
-    await tester.enterText(find.byType(TextField), 'Series 10');
-    await tester.pumpAndSettle();
-    await _tapText(tester, 'Apple Watch Series 10');
+    await pumpApp(
+      tester,
+      prefs: await prefsWith({
+        'phone.selection': ['iphone-15-pro', 'a17-pro', '8'],
+      }),
+    );
+    await tapText(tester, 'Saat ekle');
+    await tapText(tester, 'Saat seç');
+    await search(tester, 'Series 10');
+    await tapText(tester, 'Apple Watch Series 10');
     expect(find.text('Uyumlu'), findsOneWidget);
 
-    await _tapText(tester, 'Apple iPhone 15 Pro');
-    await tester.enterText(find.byType(TextField), 'Galaxy S24 Ultra');
-    await tester.pumpAndSettle();
-    await _tapText(tester, 'Samsung Galaxy S24 Ultra');
+    await tapText(tester, 'Apple iPhone 15 Pro');
+    await search(tester, 'Galaxy S24 Ultra');
+    await tapText(tester, 'Samsung Galaxy S24 Ultra');
     expect(find.text('Uyumsuz'), findsOneWidget);
   });
 
+  testWidgets('Analiz device chip switches the analysed device', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      build: _SeededBuild.new,
+      prefs: await prefsWith({
+        'phone.selection': ['pixel-8', 'tensor-g3', '8'],
+      }),
+    );
+    await openTab(tester, 'Analiz');
+    expect(find.text('İşlemci sınırlıyor'), findsOneWidget);
+    await tap(tester, find.byIcon(Icons.unfold_more_rounded));
+    await tapText(tester, 'Telefon: Google Pixel 8');
+    expect(find.text('Darboğaz puanı · Tensor G3, 8 GB'), findsOneWidget);
+  });
+
   testWidgets('selections persist across restarts', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    await _pump(tester, prefs: prefs);
-    await _tapText(tester, 'Telefon');
+    final prefs = await prefsWith({});
+    await pumpApp(tester, prefs: prefs);
+    await tapText(tester, 'Telefon ekle');
     expect(prefs.getString('device.kind'), 'phone');
 
     final c = ProviderContainer(
@@ -173,17 +146,41 @@ void main() {
     );
     addTearDown(restored.dispose);
     expect(restored.read(activeDeviceProvider), DeviceKind.phone);
-    expect(restored.read(phoneSpecProvider)?.phone.id, 'pixel-8');
     expect(restored.read(phoneSpecProvider)?.soc.id, 'tensor-g3');
   });
 
-  testWidgets('prices: search shows store links', (tester) async {
-    await _pump(tester);
-    await _tapText(tester, 'Fiyat');
+  testWidgets('prices: search, store links and recent searches', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    await openTab(tester, 'Fiyat');
     await tester.enterText(find.byType(TextField), 'rtx 4070 super');
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
     expect(find.text('NVIDIA GeForce RTX 4070 Super'), findsOneWidget);
     expect(find.text('Akakçe'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(find.text('SON ARAMALAR'), findsOneWidget);
+    expect(find.text('rtx 4070 super'), findsOneWidget);
+  });
+
+  testWidgets('profile opens from the app bar', (tester) async {
+    await pumpApp(tester);
+    await tap(tester, find.byTooltip('Profil ve ayarlar'));
+    expect(find.text('Görünüm'), findsOneWidget);
+  });
+
+  testWidgets('old addresses redirect to the new tabs', (tester) async {
+    await pumpApp(tester);
+    final router = GoRouter.of(tester.element(find.byType(HomePage)));
+    router.go('/performance');
+    await tester.pumpAndSettle();
+    expect(find.byType(PerformancePage), findsOneWidget);
+    router.go('/device');
+    await tester.pumpAndSettle();
+    expect(find.byType(HomePage), findsOneWidget);
   });
 }

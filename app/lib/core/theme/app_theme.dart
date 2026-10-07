@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:darbogaz/core/theme/tokens.dart';
+
 /// Brand colour tokens not covered by [ColorScheme].
 @immutable
 class AppPalette extends ThemeExtension<AppPalette> {
@@ -166,8 +168,8 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(Radii.l),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.3)),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
@@ -178,13 +180,35 @@ class AppTheme {
         ),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(Radii.s),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(kMinTap, kMinTap),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Radii.m),
+          ),
+          textStyle: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(minimumSize: const Size(kMinTap, kMinTap)),
+      ),
+      listTileTheme: const ListTileThemeData(
+        minVerticalPadding: Space.s,
+        horizontalTitleGap: Space.m,
+      ),
+      dividerTheme: DividerThemeData(
+        color: scheme.outlineVariant.withValues(alpha: 0.3),
+        space: 1,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: scheme.surfaceContainerHigh,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(Radii.m),
           borderSide: BorderSide.none,
         ),
       ),

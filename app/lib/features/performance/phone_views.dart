@@ -43,6 +43,7 @@ class PhoneSummaryView extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         SectionCard(
+          hero: true,
           title: spec.phone.displayName,
           icon: Icons.speed_rounded,
           trailing: StatusPill(
@@ -250,6 +251,7 @@ class WatchSummaryView extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
       children: [
         SectionCard(
+          hero: true,
           title: w.displayName,
           icon: Icons.watch_rounded,
           trailing: StatusPill(

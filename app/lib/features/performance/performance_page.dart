@@ -5,7 +5,10 @@ import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/device_chip.dart';
+import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/analysis/analysis_page.dart';
 import 'package:darbogaz/features/analysis/compatibility_card.dart';
 import 'package:darbogaz/features/performance/ai_tab.dart';
@@ -34,7 +37,7 @@ const _deviceSections = [
 ];
 const _watchSections = [_Section.summary, _Section.compat];
 
-/// "Performans" tab: content follows the device chosen in "Cihaz".
+/// "Analiz" tab: details of the active device (see [DeviceChip]).
 class PerformancePage extends ConsumerStatefulWidget {
   const PerformancePage({super.key});
 
@@ -55,27 +58,45 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: BrandTitle('Performans · ${kind.label}'),
-        actions: [
-          IconButton(
-            tooltip: 'Karşılaştır',
-            icon: const Icon(Icons.compare_arrows_rounded),
-            onPressed: () => context.push('/compare'),
-          ),
-        ],
+        title: const BrandTitle('Analiz'),
+        actions: const [ProfileAction()],
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: AppSegmented<_Section>(
-              values: sections,
-              selected: current,
-              labelOf: (s) => s.label,
-              onChanged: (s) => setState(() => _section[kind] = s),
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              0,
+              Space.page,
+              Space.s,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const DeviceChip(),
+                const SizedBox(height: Space.s),
+                AnimatedSwitcher(
+                  duration: Motion.normal,
+                  child: AppSegmented<_Section>(
+                    key: ValueKey(kind),
+                    values: sections,
+                    selected: current,
+                    labelOf: (s) => s.label,
+                    onChanged: (s) => setState(() => _section[kind] = s),
+                  ),
+                ),
+              ],
             ),
           ),
-          Expanded(child: _body(kind, current)),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: Motion.normal,
+              child: KeyedSubtree(
+                key: ValueKey('$kind-$current'),
+                child: _body(kind, current),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -138,7 +159,7 @@ class _ChooseFirst extends StatelessWidget {
     icon: icon,
     message: message,
     action: FilledButton(
-      onPressed: () => context.go('/device'),
+      onPressed: () => context.go('/home'),
       child: const Text('Cihazıma git'),
     ),
   );
