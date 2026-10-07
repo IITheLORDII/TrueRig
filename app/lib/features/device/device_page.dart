@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
+import 'package:darbogaz/features/device/device_slots.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
@@ -77,6 +78,15 @@ class _DevicesPageState extends ConsumerState<DevicesPage> {
               labelOf: (k) => k.mine,
               onChanged: ref.read(activeDeviceProvider.notifier).set,
             ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              Space.page,
+              0,
+              Space.page,
+              Space.s,
+            ),
+            child: DeviceSlotBar(kind: kind),
           ),
           Expanded(
             child: AnimatedSwitcher(

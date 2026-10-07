@@ -5,7 +5,7 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
-import 'package:darbogaz/features/performance/ai_tab.dart';
+import 'package:darbogaz/core/widgets/score_scale.dart';
 import 'package:darbogaz/features/performance/apps_tab.dart';
 import 'package:darbogaz/features/watch/watch_pages.dart';
 
@@ -72,6 +72,9 @@ class PhoneSummaryView extends ConsumerWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              ScoreScale.phoneScore(context, s.score),
+              const SizedBox(height: 8),
               for (final e in s.components.entries)
                 MetricBar(
                   label: e.key,
@@ -184,54 +187,6 @@ class PhoneAppsView extends StatelessWidget {
       itemCount: results.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) => AppResultCard(result: results[i]),
-    );
-  }
-}
-
-class PhoneAiView extends StatefulWidget {
-  const PhoneAiView({super.key, required this.spec});
-
-  final PhoneSpec spec;
-
-  @override
-  State<PhoneAiView> createState() => _PhoneAiViewState();
-}
-
-class _PhoneAiViewState extends State<PhoneAiView> {
-  Quantization _quant = Quantization.q4km;
-
-  @override
-  Widget build(BuildContext context) {
-    final results = [
-      for (final m in kMobileLlmModels) _est.llm(m, _quant, widget.spec),
-    ];
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      children: [
-        AppSegmented<Quantization>(
-          values: const [Quantization.q4km, Quantization.q8, Quantization.fp16],
-          selected: _quant,
-          labelOf: (q) => q.label,
-          onChanged: (q) => setState(() => _quant = q),
-        ),
-        const SizedBox(height: 8),
-        SectionCard(
-          title: 'Telefonda yapay zekâ (token/sn)',
-          icon: Icons.psychology_rounded,
-          child: Column(
-            children: [
-              for (final r in results) LlmRow(result: r),
-              const SizedBox(height: 4),
-              Text(
-                'Bir uygulama telefon RAM\'inin yaklaşık %45\'ini '
-                'kullanabilir; model buna sığmalı.',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: context.palette.muted),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

@@ -5,12 +5,16 @@ class PrebuiltVariant {
     required this.cpuId,
     required this.gpuId,
     required this.ramId,
+    this.year,
     this.code,
   });
 
   final String cpuId;
   final String gpuId;
   final String ramId;
+
+  /// Year this configuration came out (newest are listed first).
+  final int? year;
 
   /// Manufacturer SKU fragment when known (e.g. "G770.1245").
   final String? code;

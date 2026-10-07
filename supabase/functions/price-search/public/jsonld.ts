@@ -20,6 +20,9 @@ export interface PageProduct {
   price: number | null;
   currency: string | null;
   inStock: boolean;
+  /** schema.org aggregateRating (0..5 stars) and its review count. */
+  rating: number | null;
+  reviewCount: number | null;
   /** Per-seller offers nested in an AggregateOffer (price aggregators). */
   sellerOffers: SellerOffer[];
 }
@@ -110,8 +113,22 @@ function toProduct(n: Json, pageUrl: string): PageProduct | null {
     price,
     currency,
     inStock,
+    ...ratingOf(n.aggregateRating),
     sellerOffers,
   };
+}
+
+/** Normalises aggregateRating to a 0..5 scale (bestRating may differ). */
+export function ratingOf(v: unknown): { rating: number | null; reviewCount: number | null } {
+  if (!isObj(v)) return { rating: null, reviewCount: null };
+  const value = num(v.ratingValue);
+  const best = num(v.bestRating) ?? 5;
+  const count = num(v.reviewCount) ?? num(v.ratingCount);
+  if (value === null || value <= 0 || best <= 0) {
+    return { rating: null, reviewCount: null };
+  }
+  const rating = Math.round(Math.min(5, (value / best) * 5) * 10) / 10;
+  return { rating, reviewCount: count === null ? null : Math.round(count) };
 }
 
 function nestedOffers(agg: Json, pageUrl: string): SellerOffer[] {

@@ -34,6 +34,8 @@ class PriceOffer {
     required this.url,
     required this.inStock,
     required this.fetchedAt,
+    this.rating,
+    this.reviewCount,
   });
 
   factory PriceOffer.fromJson(Map<String, dynamic> j) => PriceOffer(
@@ -43,6 +45,8 @@ class PriceOffer {
     url: Uri.parse(j['url'] as String),
     inStock: j['in_stock'] as bool? ?? true,
     fetchedAt: DateTime.parse(j['fetched_at'] as String),
+    rating: (j['rating'] as num?)?.toDouble(),
+    reviewCount: (j['review_count'] as num?)?.toInt(),
   );
 
   final String store;
@@ -51,6 +55,10 @@ class PriceOffer {
   final Uri url;
   final bool inStock;
   final DateTime fetchedAt;
+
+  /// 0..5 stars from the store page, when published.
+  final double? rating;
+  final int? reviewCount;
 }
 
 class PriceApiException implements Exception {
@@ -138,6 +146,15 @@ class PriceSearchResult {
 
   /// Page the image was taken from (shown as attribution).
   final Uri? imageSource;
+
+  /// Mean price of in-stock offers without outliers (null when none).
+  double? get averagePrice {
+    final usable = offers.where((o) => o.inStock && !isOutlier(o)).toList();
+    if (usable.isEmpty) return null;
+    return usable.fold<double>(0, (s, o) => s + o.price) / usable.length;
+  }
+
+  String? get currency => offers.isEmpty ? null : offers.first.currency;
 
   /// Offers priced above twice the median of a result set of 3+ offers;
   /// usually marketplace listings with placeholder prices.

@@ -31,15 +31,17 @@ class AppSegmented<T extends Object> extends StatelessWidget {
         children: {
           for (final v in values)
             v: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: Text(
-                labelOf(v),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: v == selected ? scheme.onPrimary : scheme.onSurface,
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  labelOf(v),
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: v == selected ? scheme.onPrimary : scheme.onSurface,
+                  ),
                 ),
               ),
             ),

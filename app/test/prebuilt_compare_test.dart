@@ -60,7 +60,7 @@ void main() {
     await _tap(tester, find.text('Hazır sistem seç (isteğe bağlı)'));
     await _search(tester, 'G770');
     await _tap(tester, find.text('Casper Excalibur G770'));
-    await _tap(tester, find.text('i7-12700H · RTX 4060 · 16 GB'));
+    await _tap(tester, find.text('i7-12700H · RTX 4060 · 16 GB').first);
 
     // Back on Bilgisayarım: the ready-made card carries the system name.
     expect(
@@ -110,11 +110,13 @@ void main() {
         matching: find.text('Karşılaştır'),
       ),
     );
-    await _tap(tester, find.text('Ekle'));
+    await _tap(tester, find.text('Cihaz seç'));
     await _search(tester, 'iPhone 16 Pro');
     await _tap(tester, find.text('Apple iPhone 16 Pro'));
 
-    expect(find.text('Darboğaz puanı'), findsOneWidget);
+    expect(find.text('Genel puan'), findsOneWidget);
+    expect(find.text('Kim önde?'), findsOneWidget);
+    expect(find.text('Pil (karışık kullanım)'), findsOneWidget);
     expect(find.text('A15 Bionic (4 çekirdek GPU)'), findsOneWidget);
     expect(find.text('A18 Pro'), findsOneWidget);
     expect(find.text('Genshin Impact'), findsOneWidget);
@@ -134,7 +136,7 @@ void main() {
         matching: find.text('Karşılaştır'),
       ),
     );
-    await _tap(tester, find.text('Ekle'));
+    await _tap(tester, find.text('Cihaz seç'));
     await _tap(tester, find.text('İşlemci ve ekran kartı seç'));
     await _search(tester, '7800X3D');
     await _tap(tester, find.text('AMD Ryzen 7 7800X3D'));
@@ -143,8 +145,9 @@ void main() {
 
     expect(
       find.text('Ryzen 7 7800X3D + GeForce RTX 4070 Super'),
-      findsOneWidget,
+      findsWidgets,
     );
+    expect(find.text('Mağazalarda ortalama fiyat'), findsOneWidget);
     expect(find.textContaining('Oyun FPS'), findsOneWidget);
     expect(find.text('Cyberpunk 2077'), findsOneWidget);
   });
@@ -165,7 +168,7 @@ void main() {
         matching: find.text('Karşılaştır'),
       ),
     );
-    await _tap(tester, find.text('Ekle'));
+    await _tap(tester, find.text('Cihaz seç'));
     await _search(tester, 'Series 10');
     await _tap(tester, find.text('Apple Watch Series 10'));
     expect(find.text('Telefonunla'), findsOneWidget);
@@ -174,7 +177,10 @@ void main() {
 
   test('variant labels are short and readable', () {
     final c = PartCatalog.seed();
-    final v = kPrebuilts.first.variants.first;
+    final v = kPrebuilts
+        .firstWhere((s) => s.id == 'casper-g770')
+        .variants
+        .firstWhere((v) => v.code == 'G770.1245');
     expect(variantLabel(c, v), 'i5-12450H · RTX 3050 · 16 GB');
   });
 }

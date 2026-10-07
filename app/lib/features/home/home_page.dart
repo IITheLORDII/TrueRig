@@ -39,6 +39,8 @@ class HomePage extends ConsumerWidget {
         children: [
           const _SelfPhoneBanner(),
           const _StatusCard(),
+          const SizedBox(height: Space.s),
+          const _QuickAnalysisCard(),
           const SectionHeader('Ne yapmak istersin?'),
           const _FeatureGrid(),
           if (hasWatch) ...[
@@ -187,6 +189,65 @@ class _StatusRow extends ConsumerWidget {
   }
 }
 
+/// "Analiz yap": scratch area that saves nothing.
+class _QuickAnalysisCard extends StatelessWidget {
+  const _QuickAnalysisCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Widget action(IconData icon, String label, String to) => Expanded(
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(vertical: Space.s),
+        ),
+        onPressed: () => context.push(to),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon),
+            const SizedBox(height: Space.xs),
+            FittedBox(fit: BoxFit.scaleDown, child: Text(label)),
+          ],
+        ),
+      ),
+    );
+    return SectionCard(
+      title: 'Analiz yap',
+      icon: Icons.science_rounded,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Kaydetmeden dene · uygulama kapanınca silinir',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: context.palette.muted,
+            ),
+          ),
+          const SizedBox(height: Space.s),
+          Row(
+            children: [
+              action(
+                Icons.travel_explore_rounded,
+                'Model gez',
+                '/sandbox?tab=browse',
+              ),
+              const SizedBox(width: Space.s),
+              action(Icons.build_circle_rounded, 'PC topla', '/sandbox?tab=pc'),
+              const SizedBox(width: Space.s),
+              action(
+                Icons.compare_arrows_rounded,
+                'Karşılaştır',
+                '/sandbox?compare=1',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Feature {
   const _Feature(this.icon, this.title, this.subtitle, this.onTap);
   final IconData icon;
@@ -214,9 +275,9 @@ class _FeatureGrid extends StatelessWidget {
         (c) => c.go('/compare'),
       ),
       _Feature(
-        Icons.sell_rounded,
-        'Fiyat & nerede',
-        'Mağaza fiyatları, seri no',
+        Icons.manage_search_rounded,
+        'Parça ara',
+        'Model ya da seri no ile fiyat',
         (c) => c.go('/prices'),
       ),
       _Feature(

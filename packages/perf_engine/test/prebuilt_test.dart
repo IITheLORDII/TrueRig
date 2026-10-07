@@ -32,6 +32,37 @@ void main() {
       expect(g770.displayName, 'Casper Excalibur G770');
       expect(g770.variants.length, greaterThanOrEqualTo(3));
     });
+
+    test('G770 covers older generations and the GTX 1650 models', () {
+      final g770 = kPrebuilts.firstWhere((s) => s.id == 'casper-g770');
+      final cpus = g770.variants.map((v) => v.cpuId).toSet();
+      expect(cpus, containsAll(['i5-10300h', 'i5-11400h', 'i5-12450h',
+          'i7-13700h']));
+      expect(g770.variants.where((v) => v.gpuId == 'gtx-1650-laptop'),
+          hasLength(greaterThanOrEqualTo(2)));
+      expect(g770.variants.every((v) => v.year != null), isTrue);
+    });
+
+    test('every model lists its generations with a year', () {
+      for (final s in kPrebuilts) {
+        expect(s.variants.length, greaterThanOrEqualTo(3), reason: s.id);
+        for (final v in s.variants) {
+          expect(v.year, isNotNull, reason: '${s.id} ${v.cpuId}');
+        }
+      }
+    });
+
+    test('catalog spans many brands, years and desktops', () {
+      expect(kPrebuilts.length, greaterThanOrEqualTo(50));
+      expect(kPrebuilts.map((s) => s.brand).toSet().length,
+          greaterThanOrEqualTo(8));
+      expect(kPrebuilts.any((s) => !s.isLaptop), isTrue);
+      final years = kPrebuilts
+          .expand((s) => s.variants)
+          .map((v) => v.year)
+          .whereType<int>();
+      expect(years.reduce((a, b) => a < b ? a : b), lessThanOrEqualTo(2018));
+    });
   });
 
   group('SpecTextParser ($parser)', () {

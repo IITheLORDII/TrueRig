@@ -6,7 +6,6 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
-import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
@@ -44,7 +43,8 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
       ..removeWhere((t) => t.isEmpty);
     return kPrebuilts.where((s) {
       final name = PartCatalog.normalize(
-        '${s.displayName} ${s.aliases.join(' ')}',
+        '${s.displayName} ${s.aliases.join(' ')} '
+        '${s.variants.map((v) => v.code ?? '').join(' ')}',
       );
       return tokens.every(name.contains);
     }).toList();
@@ -69,11 +69,12 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
     final catalog = ref.read(catalogProvider);
     final variant = s.variants.length == 1
         ? s.variants.first
-        : await showOptionSheet<PrebuiltVariant>(
+        : await showModalBottomSheet<PrebuiltVariant>(
             context: context,
-            title: '${s.displayName} · yapılandırma',
-            options: s.variants,
-            labelOf: (v) => variantLabel(catalog, v),
+            showDragHandle: true,
+            isScrollControlled: true,
+            useSafeArea: true,
+            builder: (_) => _VariantSheet(system: s, catalog: catalog),
           );
     if (variant == null || !mounted) return;
     _finish(
@@ -154,7 +155,8 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
                     title: Text(s.displayName),
                     subtitle: Text(
                       '${s.isLaptop ? 'Dizüstü' : 'Masaüstü'} · '
-                      '${s.variants.length} yapılandırma',
+                      '${s.variants.length} yapılandırma'
+                      '${_yearSpan(s)}',
                     ),
                     trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => _pickSystem(s),
@@ -163,6 +165,83 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+String _yearSpan(PrebuiltSystem s) {
+  final years = s.variants.map((v) => v.year).whereType<int>().toList();
+  if (years.isEmpty) return '';
+  years.sort();
+  return years.first == years.last
+      ? ' · ${years.first}'
+      : ' · ${years.first}–${years.last}';
+}
+
+/// Configurations of one system grouped by year, newest first.
+class _VariantSheet extends StatelessWidget {
+  const _VariantSheet({required this.system, required this.catalog});
+
+  final PrebuiltSystem system;
+  final PartCatalog catalog;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final palette = context.palette;
+    final sorted = [...system.variants]
+      ..sort((a, b) => (b.year ?? 0).compareTo(a.year ?? 0));
+    final children = <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+        child: Text(
+          '${system.displayName} · yapılandırma',
+          style: theme.textTheme.titleMedium,
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        child: Text(
+          'Etiketteki ya da faturadaki işlemci ve ekran kartını seç.',
+          style: theme.textTheme.bodySmall?.copyWith(color: palette.muted),
+        ),
+      ),
+    ];
+    int? lastYear = -1;
+    for (final v in sorted) {
+      if (v.year != lastYear) {
+        lastYear = v.year;
+        children.add(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 2),
+            child: Text(
+              v.year?.toString() ?? 'Diğer',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        );
+      }
+      children.add(
+        ListTile(
+          dense: true,
+          title: Text(variantLabel(catalog, v)),
+          subtitle: v.code == null ? null : Text(v.code!),
+          onTap: () => Navigator.of(context).pop(v),
+        ),
+      );
+    }
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.7,
+      maxChildSize: 0.95,
+      builder: (_, scroll) => ListView(
+        controller: scroll,
+        padding: const EdgeInsets.only(bottom: 24),
+        children: children,
       ),
     );
   }

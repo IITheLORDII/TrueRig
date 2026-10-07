@@ -15,6 +15,7 @@ export 'src/fps/fps_estimator.dart';
 export 'src/fps/game_profile.dart';
 export 'src/llm/llm_estimator.dart';
 export 'src/mobile/mobile_catalog.dart';
+export 'src/mobile/mobile_insights.dart';
 export 'src/mobile/mobile_models.dart';
 export 'src/mobile/mobile_workloads.dart';
 export 'src/mobile/phone_estimator.dart';

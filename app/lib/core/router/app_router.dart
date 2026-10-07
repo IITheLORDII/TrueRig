@@ -5,6 +5,7 @@ import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/features/sandbox/sandbox_page.dart';
 import 'package:darbogaz/features/device/device_page.dart';
 import 'package:darbogaz/features/builder/part_picker_page.dart';
 import 'package:darbogaz/features/builder/prebuilt_picker_page.dart';
@@ -59,6 +60,13 @@ GoRouter createRouter() => GoRouter(
     ),
     _page('/pick/watch', (s) => WatchPickerPage(returnMode: _returns(s))),
     _page('/pick/prebuilt', (s) => PrebuiltPickerPage(returnMode: _returns(s))),
+    _page(
+      '/sandbox',
+      (s) => SandboxPage(
+        initialTab: s.uri.queryParameters['tab'],
+        startCompare: s.uri.queryParameters['compare'] == '1',
+      ),
+    ),
     // Older addresses (bookmarks, shared links).
     GoRoute(path: '/build', redirect: (_, _) => '/home'),
     GoRoute(path: '/device', redirect: (_, _) => '/home'),

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import { collect } from "../public/collector.ts";
-import { extractPageData, num } from "../public/jsonld.ts";
+import { extractPageData, num, ratingOf } from "../public/jsonld.ts";
 import { looksLikePartNumber, matchKind } from "../public/match.ts";
 import { type FetchDeps, PoliteFetcher } from "../public/polite_fetch.ts";
 import { isAllowed, parseRobots, rulesForStatus } from "../public/robots.ts";
@@ -259,5 +259,20 @@ describe("collect", () => {
     const r = await collect("vengeance 32gb", [store], new PoliteFetcher(net.deps));
     assert.equal(r.offers.length, 1);
     assert.equal(r.image, null);
+  });
+});
+
+describe("ratingOf", () => {
+  test("normalises to 5 stars and keeps review count", () => {
+    assert.deepEqual(ratingOf({ ratingValue: "9", bestRating: 10, reviewCount: "120" }), {
+      rating: 4.5,
+      reviewCount: 120,
+    });
+    assert.deepEqual(ratingOf({ ratingValue: 4.26, ratingCount: 8 }), { rating: 4.3, reviewCount: 8 });
+  });
+
+  test("missing or invalid rating yields nulls", () => {
+    assert.deepEqual(ratingOf(undefined), { rating: null, reviewCount: null });
+    assert.deepEqual(ratingOf({ ratingValue: 0 }), { rating: null, reviewCount: null });
   });
 });

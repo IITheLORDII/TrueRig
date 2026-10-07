@@ -94,14 +94,8 @@ List<CompareSection> comparePcs(
     return e.placement == LlmPlacement.doesNotFit ? 0 : e.tokensPerSecond;
   }
 
-  double? price(PcBuild x) {
-    final prices = [x.cpu?.refPriceUsd, x.gpu?.refPriceUsd];
-    if (prices.any((p) => p == null)) return null;
-    return prices.fold<double>(0, (s, p) => s + p!);
-  }
-
   return [
-    CompareSection('Parçalar', [
+    CompareSection('Performans', [
       CompareRow.text('İşlemci', a.cpu?.model ?? '–', b.cpu?.model ?? '–'),
       CompareRow.text('Ekran kartı', a.gpu?.model ?? '–', b.gpu?.model ?? '–'),
       CompareRow.text(
@@ -117,13 +111,6 @@ List<CompareSection> comparePcs(
         b.gpu?.vramGb.toDouble(),
         unit: ' GB',
       ),
-      CompareRow(
-        'İşlemci + GPU fiyatı',
-        price(a),
-        price(b),
-        unit: ' \$',
-        higherIsBetter: false,
-      ),
     ]),
     CompareSection('Oyun FPS (${resolution.label} ${preset.label})', [
       for (final g in kGames) CompareRow(g.name, gameFps(a, g), gameFps(b, g)),
@@ -137,7 +124,7 @@ List<CompareSection> comparePcs(
             apps.estimate(app, b).score,
           ),
     ]),
-    CompareSection('Yapay zekâ (token/sn, Q4)', [
+    CompareSection('AI (LLM-local) · token/sn, Q4', [
       for (final id in _pcLlms)
         if (kLlmModels.where((x) => x.id == id).firstOrNull case final m?)
           CompareRow(m.name, tok(a, m), tok(b, m), decimals: 1),
@@ -147,19 +134,22 @@ List<CompareSection> comparePcs(
 
 // ------------------------------------------------------------- Phone ------
 
-List<CompareSection> comparePhones(PhoneSpec a, PhoneSpec b) {
+List<CompareSection> comparePhones(
+  PhoneSpec a,
+  PhoneSpec b, {
+  required int currentYear,
+}) {
   const est = PhoneEstimator();
+  const ins = PhoneInsightEstimator();
   final sa = est.summarize(a);
   final sb = est.summarize(b);
-  double tok(PhoneSpec s, String id) {
-    final m = kMobileLlmModels.firstWhere((x) => x.id == id);
-    return est.llm(m, Quantization.q4km, s).tokensPerSecond;
-  }
+  final ia = ins.analyze(a, currentYear: currentYear);
+  final ib = ins.analyze(b, currentYear: currentYear);
 
   return [
-    CompareSection('Genel', [
+    CompareSection('Performans', [
       CompareRow.text('İşlemci', a.soc.name, b.soc.name),
-      CompareRow('Darboğaz puanı', sa.score, sb.score),
+      CompareRow('Genel puan', sa.score, sb.score),
       CompareRow('Tek çekirdek', a.soc.cpuSt, b.soc.cpuSt),
       CompareRow('Çok çekirdek', a.soc.cpuMt, b.soc.cpuMt),
       CompareRow('Grafik (GPU)', a.soc.gpuScore, b.soc.gpuScore),
@@ -170,30 +160,37 @@ List<CompareSection> comparePhones(PhoneSpec a, PhoneSpec b) {
         unit: '%',
       ),
       CompareRow('RAM', a.ramGb.toDouble(), b.ramGb.toDouble(), unit: ' GB'),
+    ]),
+    CompareSection('Mobil · pil, ekran, destek', [
       CompareRow(
-        'Ekran',
+        'Pil (karışık kullanım)',
+        ia.screenOnHours,
+        ib.screenOnHours,
+        unit: ' sa',
+        decimals: 1,
+      ),
+      CompareRow(
+        'Pil (ağır oyun)',
+        ia.gamingHours,
+        ib.gamingHours,
+        unit: ' sa',
+        decimals: 1,
+      ),
+      CompareRow(
+        'Ekran yenileme',
         a.phone.displayHz.toDouble(),
         b.phone.displayHz.toDouble(),
         unit: ' Hz',
       ),
       CompareRow(
-        'Pil',
-        a.phone.batteryMah.toDouble(),
-        b.phone.batteryMah.toDouble(),
-        unit: ' mAh',
+        'Güncelleme desteği',
+        ia.supportUntilYear.toDouble(),
+        ib.supportUntilYear.toDouble(),
       ),
-      CompareRow(
-        'Son güncelleme',
-        a.phone.maxOsMajor.toDouble(),
-        b.phone.maxOsMajor.toDouble(),
-      ),
-      CompareRow(
-        'Çıkış fiyatı',
-        a.phone.refPriceUsd,
-        b.phone.refPriceUsd,
-        unit: ' \$',
-        higherIsBetter: false,
-      ),
+    ]),
+    CompareSection('Günlük kullanım', [
+      for (var i = 0; i < ia.usage.length; i++)
+        CompareRow(ia.usage[i].name, ia.usage[i].score, ib.usage[i].score),
     ]),
     CompareSection('Oyun FPS (Yüksek, ısınınca)', [
       for (final g in kMobileGames)
@@ -203,32 +200,15 @@ List<CompareSection> comparePhones(PhoneSpec a, PhoneSpec b) {
           est.game(g, b).sustainedFps,
         ),
     ]),
-    CompareSection('Telefonda yapay zekâ (token/sn)', [
-      CompareRow(
-        'Qwen3 1.7B',
-        tok(a, 'qwen3-1.7b'),
-        tok(b, 'qwen3-1.7b'),
-        decimals: 1,
-      ),
-      CompareRow(
-        'Qwen3 4B',
-        tok(a, 'qwen3-4b-m'),
-        tok(b, 'qwen3-4b-m'),
-        decimals: 1,
-      ),
-      CompareRow(
-        'Gemma 3n E4B',
-        tok(a, 'gemma3n-e4b'),
-        tok(b, 'gemma3n-e4b'),
-        decimals: 1,
-      ),
-    ]),
   ];
 }
 
 // ------------------------------------------------------------- Watch ------
 
 List<CompareSection> compareWatches(WatchReport a, WatchReport b) {
+  const ins = WatchInsightEstimator();
+  final wa = ins.analyze(a.watch);
+  final wb = ins.analyze(b.watch);
   String compat(WatchReport r) => r.phone == null
       ? 'Telefon seçilmedi'
       : (r.isCompatible ? 'Uyumlu' : 'Uyumsuz');
@@ -237,12 +217,6 @@ List<CompareSection> compareWatches(WatchReport a, WatchReport b) {
       CompareRow.text('Sistem', a.watch.os.label, b.watch.os.label),
       CompareRow.text('Telefonunla', compat(a), compat(b)),
       CompareRow('Akıcılık', a.smoothness, b.smoothness),
-      CompareRow(
-        'Pil',
-        a.watch.batteryHours.toDouble(),
-        b.watch.batteryHours.toDouble(),
-        unit: ' sa',
-      ),
       CompareRow(
         'Kullanılabilir özellik',
         a.availableFeatures.length.toDouble(),
@@ -254,13 +228,23 @@ List<CompareSection> compareWatches(WatchReport a, WatchReport b) {
         b.watch.storageGb.toDouble(),
         unit: ' GB',
       ),
+    ]),
+    CompareSection('Mobil · pil', [
       CompareRow(
-        'Çıkış fiyatı',
-        a.watch.refPriceUsd,
-        b.watch.refPriceUsd,
-        unit: ' \$',
-        higherIsBetter: false,
+        'Normal kullanım',
+        wa.typicalDays,
+        wb.typicalDays,
+        unit: ' gün',
+        decimals: 1,
       ),
+      CompareRow(
+        'Ekran hep açık',
+        wa.alwaysOnDays,
+        wb.alwaysOnDays,
+        unit: ' gün',
+        decimals: 1,
+      ),
+      CompareRow('GPS ile antrenman', wa.gpsHours, wb.gpsHours, unit: ' sa'),
     ]),
     CompareSection('Özellikler', [
       for (final f in WatchFeature.values)
@@ -272,4 +256,15 @@ List<CompareSection> compareWatches(WatchReport a, WatchReport b) {
           ),
     ]),
   ];
+}
+
+/// Rows where each side is ahead (ties and text rows are not counted).
+({int a, int b}) countWins(List<CompareSection> sections) {
+  var a = 0;
+  var b = 0;
+  for (final r in sections.expand((s) => s.rows)) {
+    if (r.winner == -1) a++;
+    if (r.winner == 1) b++;
+  }
+  return (a: a, b: b);
 }

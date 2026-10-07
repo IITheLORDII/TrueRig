@@ -3,18 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
+import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
-import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/builder/prebuilt_picker_page.dart';
 import 'package:darbogaz/features/compare/compare_metrics.dart';
-import 'package:darbogaz/core/brand/truerig_logo.dart';
+import 'package:darbogaz/features/compare/compare_widgets.dart';
 
-/// "Karşılaştır": the user's current device vs another one of the same kind.
+/// Everything needed to draw one comparison.
+typedef _Comparison = ({
+  String? mine,
+  String? mineQuery,
+  String? other,
+  String? otherQuery,
+  List<CompareSection>? sections,
+});
+
+/// "Karşılaştır": one of the user's devices vs another of the same kind.
 class ComparePage extends ConsumerStatefulWidget {
   const ComparePage({super.key});
 
@@ -25,9 +36,42 @@ class ComparePage extends ConsumerStatefulWidget {
 class _ComparePageState extends ConsumerState<ComparePage> {
   /// Own device-type choice; starts at the active device.
   DeviceKind? _kind;
+
+  /// Which saved device is "Benim" per kind (null = the active one).
+  final Map<DeviceKind, int> _mine = {};
   PickedSystem? _otherPc;
   Phone? _otherPhone;
   Watch? _otherWatch;
+
+  SavedDevice? _mineDevice(DeviceKind k) {
+    final saved = ref.watch(savedDevicesProvider);
+    final list = saved.of(k);
+    if (list.isEmpty) return null;
+    final i = (_mine[k] ?? saved.activeIndex(k)).clamp(0, list.length - 1);
+    final d = list[i];
+    return d.isEmpty ? null : d;
+  }
+
+  Future<void> _chooseMine(DeviceKind k) async {
+    final saved = ref.read(savedDevicesProvider);
+    final ctl = ref.read(savedDevicesProvider.notifier);
+    final list = saved.of(k);
+    if (list.where((d) => !d.isEmpty).length < 2) {
+      context.go('/devices?kind=${k.name}');
+      return;
+    }
+    final picked = await showOptionSheet<int>(
+      context: context,
+      title: 'Hangi cihazın karşılaştırılsın?',
+      options: [
+        for (var i = 0; i < list.length; i++)
+          if (!list[i].isEmpty) i,
+      ],
+      labelOf: (i) => ctl.labelOf(k, i),
+      selected: _mine[k] ?? saved.activeIndex(k),
+    );
+    if (picked != null) setState(() => _mine[k] = picked);
+  }
 
   Future<void> _pickPc() async {
     final how = await showOptionSheet<String>(
@@ -76,16 +120,17 @@ class _ComparePageState extends ConsumerState<ComparePage> {
   @override
   Widget build(BuildContext context) {
     final DeviceKind kind = _kind ?? ref.watch(activeDeviceProvider);
-    final (
-      String? mine,
-      String? other,
-      VoidCallback pick,
-      List<CompareSection>? sections,
-    ) = switch (kind) {
+    final c = switch (kind) {
       DeviceKind.pc => _pc(),
       DeviceKind.phone => _phone(),
       DeviceKind.watch => _watch(),
     };
+    final pick = switch (kind) {
+      DeviceKind.pc => _pickPc,
+      DeviceKind.phone => _pickPhone,
+      DeviceKind.watch => _pickWatch,
+    };
+    final sections = c.sections;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,10 +156,11 @@ class _ComparePageState extends ConsumerState<ComparePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _SideCard(
+                child: SideCard(
                   caption: 'Benim',
-                  name: mine ?? "Önce Cihazlarım'dan ekle",
-                  onTap: mine == null ? () => context.go('/devices') : null,
+                  name: c.mine ?? "Önce Cihazlarım'dan ekle",
+                  color: CompareColors.mine(context),
+                  onTap: () => _chooseMine(kind),
                 ),
               ),
               const Padding(
@@ -122,32 +168,47 @@ class _ComparePageState extends ConsumerState<ComparePage> {
                 child: Icon(Icons.compare_arrows_rounded),
               ),
               Expanded(
-                child: _SideCard(
+                child: SideCard(
                   caption: 'Karşılaştırılan',
-                  name: other ?? 'Ekle',
-                  highlight: other == null,
+                  name: c.other ?? 'Cihaz seç',
+                  color: CompareColors.other(context),
+                  highlight: c.other == null,
                   onTap: pick,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.m),
           if (sections == null)
             const EmptyHint(
               icon: Icons.compare_arrows_rounded,
               message:
-                  'İki cihaz da seçilince yan yana karşılaştırma burada '
-                  'görünür.',
+                  'İki cihaz da seçilince kim hangi konuda önde, burada '
+                  'yan yana görünür.',
             )
           else ...[
+            VerdictCard(
+              mine: c.mine!,
+              other: c.other!,
+              wins: countWins(sections),
+            ),
+            const SizedBox(height: Space.s),
+            PriceCompareCard(
+              mine: c.mine!,
+              mineQuery: c.mineQuery,
+              other: c.other!,
+              otherQuery: c.otherQuery,
+            ),
+            const SizedBox(height: Space.s),
             for (final s in sections) ...[
-              _CompareTable(section: s),
-              const SizedBox(height: 8),
+              CompareTable(section: s, mine: c.mine!, other: c.other!),
+              const SizedBox(height: Space.s),
             ],
             Text(
               kEstimateDisclaimer,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: context.palette.muted),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: context.palette.muted),
             ),
           ],
         ],
@@ -155,19 +216,38 @@ class _ComparePageState extends ConsumerState<ComparePage> {
     );
   }
 
-  (String?, String?, VoidCallback, List<CompareSection>?) _pc() {
-    final mine = ref.watch(buildProvider);
+  /// Product name used for the store search ("Casper Excalibur G770").
+  static String _systemQuery(String label) => label.split(' · ').first;
+
+  _Comparison _pc() {
+    final catalog = ref.watch(catalogProvider);
+    final saved = _mineDevice(DeviceKind.pc);
+    final mine = saved == null ? null : pcBuildOf(saved, catalog);
     final settings = ref.watch(analysisSettingsProvider);
-    final hasMine = mine.cpu != null && mine.gpu != null;
+    final hasMine = mine != null && mine.cpu != null && mine.gpu != null;
     final other = _otherPc;
-    final mineLabel =
-        ref.watch(prebuiltProvider)?.label ??
-        (hasMine ? '${mine.cpu!.model} + ${mine.gpu!.model}' : null);
+    final prebuiltLabel = saved != null && saved.data[0].isNotEmpty
+        ? saved.data[0]
+        : null;
+    final mineLabel = !hasMine
+        ? null
+        : (saved!.name ??
+              prebuiltLabel ??
+              '${mine.cpu!.model} + ${mine.gpu!.model}');
+
+    /// Ready-made systems are searched by name; hand-picked builds by GPU.
+    String? query(String? prebuilt, PcBuild? b) =>
+        prebuilt != null ? _systemQuery(prebuilt) : b?.gpu?.model;
+
+    final otherIsSystem = other != null && !other.label.contains(' + ');
     return (
-      mineLabel,
-      other?.label,
-      _pickPc,
-      hasMine && other != null
+      mine: mineLabel,
+      mineQuery: hasMine ? query(prebuiltLabel, mine) : null,
+      other: other?.label,
+      otherQuery: other == null
+          ? null
+          : query(otherIsSystem ? other.label : null, other.build),
+      sections: hasMine && other != null
           ? comparePcs(
               mine,
               other.build,
@@ -178,10 +258,11 @@ class _ComparePageState extends ConsumerState<ComparePage> {
     );
   }
 
-  (String?, String?, VoidCallback, List<CompareSection>?) _phone() {
-    final mine = ref.watch(phoneSpecProvider);
-    final other = _otherPhone;
+  _Comparison _phone() {
     final catalog = ref.watch(mobileCatalogProvider);
+    final saved = _mineDevice(DeviceKind.phone);
+    final mine = saved == null ? null : phoneSpecOf(saved, catalog);
+    final other = _otherPhone;
     final otherSpec = other == null
         ? null
         : PhoneSpec(
@@ -190,138 +271,39 @@ class _ComparePageState extends ConsumerState<ComparePage> {
             ramGb: other.defaultRamGb,
           );
     return (
-      mine?.phone.displayName,
-      other?.displayName,
-      _pickPhone,
-      mine != null && otherSpec != null ? comparePhones(mine, otherSpec) : null,
-    );
-  }
-
-  (String?, String?, VoidCallback, List<CompareSection>?) _watch() {
-    final mine = ref.watch(watchReportProvider);
-    final other = _otherWatch;
-    // Judge the other watch against the same phone as the user's watch.
-    final otherReport = other == null
-        ? null
-        : const WatchCompatibility().check(
-            other,
-            mine?.phone ?? ref.watch(phoneSpecProvider)?.phone,
-          );
-    return (
-      mine?.watch.displayName,
-      other?.displayName,
-      _pickWatch,
-      mine != null && otherReport != null
-          ? compareWatches(mine, otherReport)
+      mine: mine?.phone.displayName,
+      mineQuery: mine?.phone.displayName,
+      other: other?.displayName,
+      otherQuery: other?.displayName,
+      sections: mine != null && otherSpec != null
+          ? comparePhones(mine, otherSpec, currentYear: DateTime.now().year)
           : null,
     );
   }
-}
 
-class _SideCard extends StatelessWidget {
-  const _SideCard({
-    required this.caption,
-    required this.name,
-    this.onTap,
-    this.highlight = false,
-  });
-
-  final String caption;
-  final String name;
-  final VoidCallback? onTap;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: highlight ? scheme.primary.withValues(alpha: 0.12) : null,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                caption,
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: context.palette.muted),
-              ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  if (highlight) ...[
-                    Icon(Icons.add_rounded, size: 18, color: scheme.primary),
-                    const SizedBox(width: 4),
-                  ],
-                  Expanded(
-                    child: Text(
-                      name,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ],
-              ),
-              if (onTap != null && !highlight)
-                Text(
-                  'Değiştir',
-                  style: TextStyle(color: scheme.primary, fontSize: 12),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CompareTable extends StatelessWidget {
-  const _CompareTable({required this.section});
-
-  final CompareSection section;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final theme = Theme.of(context);
-    Widget cell(String text, bool wins) => Expanded(
-      flex: 3,
-      child: Text(
-        text,
-        textAlign: TextAlign.end,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: numberStyle(
-          context,
-          size: 13,
-          color: wins ? palette.good : null,
-        ).copyWith(fontWeight: wins ? FontWeight.w800 : FontWeight.w500),
-      ),
-    );
-    return SectionCard(
-      title: section.title,
-      child: Column(
-        children: [
-          for (final r in section.rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Text(r.label, style: theme.textTheme.bodySmall),
-                  ),
-                  cell(r.aDisplay, r.winner == -1),
-                  cell(r.bDisplay, r.winner == 1),
-                ],
-              ),
-            ),
-        ],
-      ),
+  _Comparison _watch() {
+    final catalog = ref.watch(mobileCatalogProvider);
+    final saved = _mineDevice(DeviceKind.watch);
+    final mineWatch = saved == null ? null : watchOf(saved, catalog);
+    final pairedId = saved != null && saved.data.length > 1
+        ? saved.data[1]
+        : '';
+    final phone = pairedId.isNotEmpty
+        ? catalog.phone(pairedId)
+        : ref.watch(phoneSpecProvider)?.phone;
+    const compat = WatchCompatibility();
+    final mine = mineWatch == null ? null : compat.check(mineWatch, phone);
+    final other = _otherWatch;
+    // Judge the other watch against the same phone as the user's watch.
+    final otherReport = other == null ? null : compat.check(other, phone);
+    return (
+      mine: mineWatch?.displayName,
+      mineQuery: mineWatch?.displayName,
+      other: other?.displayName,
+      otherQuery: other?.displayName,
+      sections: mine != null && otherReport != null
+          ? compareWatches(mine, otherReport)
+          : null,
     );
   }
 }

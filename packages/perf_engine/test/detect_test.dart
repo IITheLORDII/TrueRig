@@ -190,8 +190,10 @@ void main() {
     test('tier words never fall back to the base card', () {
       expect(
           matcher.matchGpu('NVIDIA GeForce GTX 1650 SUPER')?.id, 'gtx-1650s');
-      // No RTX 3050 Ti in the catalog: must not become a plain 3050.
-      expect(matcher.matchGpu('NVIDIA GeForce RTX 3050 Ti Laptop GPU'), isNull);
+      expect(matcher.matchGpu('NVIDIA GeForce RTX 3050 Ti Laptop GPU')?.id,
+          'rtx-3050ti-laptop');
+      // No RTX 4060 Super exists: must not become a plain 4060.
+      expect(matcher.matchGpu('NVIDIA GeForce RTX 4060 Super'), isNull);
     });
 
     test('laptop and desktop GPUs are told apart', () {

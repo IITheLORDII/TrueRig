@@ -11,6 +11,7 @@ import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/bottleneck_gauge.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/score_scale.dart';
 import 'package:darbogaz/features/analysis/compatibility_card.dart';
 import 'package:darbogaz/features/analysis/upgrade_card.dart';
 
@@ -57,7 +58,7 @@ class PcSummaryView extends ConsumerWidget {
                 .update((s) => s.copyWith(resolution: r)),
           ),
           const SizedBox(height: Space.m),
-          _GeneralCard(general: general),
+          GeneralBottleneckCard(general: general),
           const SizedBox(height: Space.s),
           const _ResolutionCard(),
           const SizedBox(height: Space.s),
@@ -70,8 +71,9 @@ class PcSummaryView extends ConsumerWidget {
   }
 }
 
-class _GeneralCard extends StatelessWidget {
-  const _GeneralCard({required this.general});
+/// General bottleneck of a system (gauge, zone scale, average caps).
+class GeneralBottleneckCard extends StatelessWidget {
+  const GeneralBottleneckCard({super.key, required this.general});
 
   final SystemBottleneck general;
 
@@ -110,6 +112,8 @@ class _GeneralCard extends StatelessWidget {
             style: theme.textTheme.bodySmall?.copyWith(color: palette.muted),
           ),
           const SizedBox(height: Space.m),
+          ScoreScale.bottleneck(context, g.bottleneckPercent),
+          const SizedBox(height: Space.m),
           MetricBar(
             label: 'İşlemcinin besleyebildiği (ort.)',
             value: cpuCap,
@@ -139,6 +143,17 @@ class _ResolutionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final rows = ref.watch(bottleneckByResolutionProvider);
     if (rows == null) return const SizedBox.shrink();
+    return ResolutionBottleneckCard(rows: rows);
+  }
+}
+
+class ResolutionBottleneckCard extends StatelessWidget {
+  const ResolutionBottleneckCard({super.key, required this.rows});
+
+  final List<SystemBottleneck> rows;
+
+  @override
+  Widget build(BuildContext context) {
     final palette = context.palette;
     return SectionCard(
       title: 'Çözünürlüğe göre',

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/providers.dart';
+import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/router/app_router.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -27,7 +28,13 @@ class _DarbogazAppState extends ConsumerState<DarbogazApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
+  Widget build(BuildContext context) {
+    // Keeps the saved-device list in sync with the active devices.
+    ref.watch(savedDevicesProvider);
+    return _app();
+  }
+
+  Widget _app() => MaterialApp.router(
     title: kAppName,
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light(),

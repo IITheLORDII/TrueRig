@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:perf_engine/perf_engine.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
@@ -15,27 +13,8 @@ import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
+import 'package:darbogaz/features/prices/store_list.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
-
-final priceRepositoryProvider = Provider<PriceRepository>(
-  (ref) => RemotePriceRepository(),
-);
-
-/// Live search; an MPN-matched image is remembered for the whole session so
-/// the part shows its picture everywhere in the app.
-final priceSearchProvider = FutureProvider.family<PriceSearchResult, String>((
-  ref,
-  query,
-) async {
-  final result = await ref.watch(priceRepositoryProvider).search(query);
-  final image = result.imageUrl;
-  if (image != null) {
-    ref.read(sessionPartImagesProvider.notifier).remember(query, image);
-  }
-  return result;
-});
-
-final _priceFormat = NumberFormat.decimalPattern('tr');
 
 const _recentKey = 'prices.recent';
 const _maxRecent = 8;
@@ -110,7 +89,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const BrandTitle('Fiyat & Nerede Bulunur'),
+        title: const BrandTitle('Parça Ara'),
         actions: const [ProfileAction()],
       ),
       body: ListView(
@@ -139,9 +118,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
           ] else ...[
             if (match != null) _MatchCard(part: match),
             const SizedBox(height: 12),
-            _LiveOffers(query: query, showImage: match == null),
-            const SizedBox(height: 12),
-            _StoreLinks(query: query),
+            StoreList(query: query, showImage: match == null),
           ],
         ],
       ),
@@ -298,117 +275,5 @@ class _MatchCard extends ConsumerWidget {
         ),
       ),
     );
-  }
-}
-
-class _LiveOffers extends ConsumerWidget {
-  const _LiveOffers({required this.query, required this.showImage});
-
-  final String query;
-
-  /// True when the query is not a catalog part, so the card shows the image.
-  final bool showImage;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(priceRepositoryProvider).isConfigured) {
-      return const SizedBox.shrink();
-    }
-    final result = ref.watch(priceSearchProvider(query));
-    final palette = context.palette;
-    final muted = Theme.of(context).textTheme.labelSmall
-        ?.copyWith(color: palette.muted);
-    return SectionCard(
-      title: 'Güncel fiyatlar',
-      icon: Icons.local_offer_rounded,
-      child: result.when(
-        loading: () => const Column(
-          children: [SkeletonBar(), SkeletonBar(width: 220), SkeletonBar()],
-        ),
-        error: (e, _) => Text(
-          e is PriceApiException ? e.message : 'Fiyatlar alınamadı.',
-          style: TextStyle(color: palette.bad),
-        ),
-        data: (r) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (showImage && r.imageUrl != null)
-              Center(
-                child: PartThumb(
-                  imageUrl: r.imageUrl,
-                  fallbackIcon: Icons.inventory_2_rounded,
-                  size: 140,
-                ),
-              ),
-            if (r.offers.isEmpty)
-              const Text(
-                'Herkese açık sayfalarda bu ürün için fiyat bulunamadı. '
-                'Aşağıdaki mağaza bağlantılarını deneyebilirsin.',
-              ),
-            for (final o in r.offers)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(o.store),
-                subtitle: Text(
-                  [
-                    o.inStock ? 'Stokta' : 'Stokta yok',
-                    if (r.isOutlier(o)) 'olağan dışı fiyat',
-                  ].join(' · '),
-                  style: r.isOutlier(o) ? TextStyle(color: palette.warn) : null,
-                ),
-                trailing: Text(
-                  '${_priceFormat.format(o.price)} ${o.currency}',
-                  style: numberStyle(context, size: 15),
-                ),
-                onTap: () => _open(context, o.url),
-              ),
-            if (r.offers.isNotEmpty || r.imageSource != null)
-              Text(
-                'Fiyatlar satıcı ilanlarından alınır ve 6 saate kadar '
-                'gecikebilir.${r.imageSource != null ? ' Görsel: ${r.imageSource!.host}' : ''}',
-                style: muted,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StoreLinks extends StatelessWidget {
-  const _StoreLinks({required this.query});
-
-  final String query;
-
-  @override
-  Widget build(BuildContext context) {
-    final links = storeSearchLinks(query);
-    return SectionCard(
-      title: 'Mağazalarda ara',
-      icon: Icons.storefront_rounded,
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final l in links)
-            ActionChip(
-              avatar: Icon(
-                l.region == 'TR' ? Icons.flag_rounded : Icons.public_rounded,
-                size: 18,
-              ),
-              label: Text(l.store),
-              onPressed: () => _open(context, l.url),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _open(BuildContext context, Uri url) async {
-  final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
-  if (!ok && context.mounted) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Bağlantı açılamadı.')));
   }
 }

@@ -14,28 +14,36 @@ import 'package:darbogaz/features/analysis/compatibility_card.dart';
 import 'package:darbogaz/features/performance/ai_tab.dart';
 import 'package:darbogaz/features/performance/apps_tab.dart';
 import 'package:darbogaz/features/performance/games_tab.dart';
+import 'package:darbogaz/features/performance/mobile_views.dart';
 import 'package:darbogaz/features/performance/phone_views.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
-enum _Section { summary, games, apps, ai, compat }
+enum _Section { summary, games, apps, ai, mobile, compat }
 
 extension on _Section {
   String get label => switch (this) {
     _Section.summary => 'Özet',
     _Section.games => 'Oyun',
     _Section.apps => 'Uygulama',
-    _Section.ai => 'AI',
+    _Section.ai => 'AI (LLM-local)',
+    _Section.mobile => 'Mobil',
     _Section.compat => 'Uyumluluk',
   };
 }
 
-const _deviceSections = [
+const _pcSections = [
   _Section.summary,
   _Section.games,
   _Section.apps,
   _Section.ai,
 ];
-const _watchSections = [_Section.summary, _Section.compat];
+const _phoneSections = [
+  _Section.summary,
+  _Section.games,
+  _Section.apps,
+  _Section.mobile,
+];
+const _watchSections = [_Section.summary, _Section.mobile, _Section.compat];
 
 /// "Analiz" tab: details of the active device (see [DeviceChip]).
 class PerformancePage extends ConsumerStatefulWidget {
@@ -51,10 +59,15 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
   @override
   Widget build(BuildContext context) {
     final kind = ref.watch(activeDeviceProvider);
-    final sections = kind == DeviceKind.watch
-        ? _watchSections
-        : _deviceSections;
-    final current = _section[kind] ?? _Section.summary;
+    final sections = switch (kind) {
+      DeviceKind.pc => _pcSections,
+      DeviceKind.phone => _phoneSections,
+      DeviceKind.watch => _watchSections,
+    };
+    final saved = _section[kind];
+    final current = saved != null && sections.contains(saved)
+        ? saved
+        : _Section.summary;
 
     return Scaffold(
       appBar: AppBar(
@@ -122,7 +135,7 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
         return switch (section) {
           _Section.games => PhoneGamesView(spec: spec),
           _Section.apps => PhoneAppsView(spec: spec),
-          _Section.ai => PhoneAiView(spec: spec),
+          _Section.mobile => PhoneMobileView(spec: spec),
           _ => PhoneSummaryView(spec: spec),
         };
       case DeviceKind.watch:
@@ -142,6 +155,7 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
               ),
             ],
           ),
+          _Section.mobile => WatchMobileView(report: report),
           _ => WatchSummaryView(report: report),
         };
     }

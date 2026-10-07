@@ -12,6 +12,8 @@ export interface Offer {
   currency: string;
   url: string;
   in_stock: boolean;
+  rating: number | null;
+  review_count: number | null;
 }
 
 export interface ImageHit {
@@ -100,7 +102,8 @@ export function productLinks(
 
 const EMPTY_PRODUCT: PageProduct = {
   name: "", url: null, imageUrl: null, brand: null, sku: null, mpn: null,
-  gtin: null, price: null, currency: null, inStock: true, sellerOffers: [],
+  gtin: null, price: null, currency: null, inStock: true, rating: null,
+  reviewCount: null, sellerOffers: [],
 };
 
 /** Aggregator pages yield one offer per seller; shops yield their own. */
@@ -109,10 +112,16 @@ function toOffers(store: string, p: PageProduct): Offer[] {
   if (p.sellerOffers.length > 0) {
     return p.sellerOffers
       .filter((o) => o.url.startsWith("https://"))
-      .map((o) => ({ store: o.seller, price: o.price, currency, url: o.url, in_stock: o.inStock }));
+      .map((o) => ({
+        store: o.seller, price: o.price, currency, url: o.url, in_stock: o.inStock,
+        rating: p.rating, review_count: p.reviewCount,
+      }));
   }
   if (p.price === null || p.price <= 0 || !p.url?.startsWith("https://")) return [];
-  return [{ store, price: p.price, currency, url: p.url, in_stock: p.inStock }];
+  return [{
+    store, price: p.price, currency, url: p.url, in_stock: p.inStock,
+    rating: p.rating, review_count: p.reviewCount,
+  }];
 }
 
 function dedupe(offers: Offer[]): Offer[] {

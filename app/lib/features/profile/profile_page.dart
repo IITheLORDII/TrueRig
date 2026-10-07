@@ -5,6 +5,7 @@ import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
+import 'package:darbogaz/features/profile/saved_devices_card.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -32,14 +33,7 @@ class ProfilePage extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          const SectionCard(
-            title: 'Kayıtlı sistemler',
-            icon: Icons.bookmarks_rounded,
-            child: Text(
-              'Hesap ile giriş yapınca sistemlerini kaydedip paylaşabileceksin '
-              '(yakında).',
-            ),
-          ),
+          const SavedDevicesCard(),
           const SizedBox(height: 12),
           const SectionCard(
             title: 'Tahminler hakkında',

@@ -210,4 +210,34 @@ void main() {
       expect(none.batteryDays, 14);
     });
   });
+
+  group('mobile insights', () {
+    const ins = PhoneInsightEstimator();
+
+    test('battery hours are in a realistic range', () {
+      for (final p in m.phones) {
+        final i = ins.analyze(spec(p.id), currentYear: 2026);
+        expect(i.screenOnHours, inInclusiveRange(3, 16), reason: p.id);
+        expect(i.gamingHours, lessThan(i.screenOnHours), reason: p.id);
+      }
+    });
+
+    test('newer phones get updates for longer', () {
+      final old = ins.analyze(spec('iphone-15'), currentYear: 2026);
+      final pixel = ins.analyze(spec('pixel-8'), currentYear: 2026);
+      expect(old.supportUntilYear, greaterThanOrEqualTo(2025));
+      expect(pixel.supportUntilYear, 2030);
+      expect(pixel.supportYearsLeft, 4);
+      expect(old.usage.map((u) => u.name), contains('Ağır oyun (uzun süre)'));
+    });
+
+    test('watch GPS time is shorter than daily battery', () {
+      final w = m.watches.firstWhere((w) => w.features.contains(
+            WatchFeature.gps,
+          ));
+      final i = const WatchInsightEstimator().analyze(w);
+      expect(i.gpsHours, lessThan(i.typicalDays * 24));
+      expect(i.alwaysOnDays, lessThan(i.typicalDays));
+    });
+  });
 }

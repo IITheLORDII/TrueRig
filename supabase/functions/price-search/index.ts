@@ -113,7 +113,7 @@ async function readCache(client: SupabaseClient, key: string) {
   const since = new Date(Date.now() - CACHE_HOURS * 3600_000).toISOString();
   const { data: offers, error } = await client
     .from("price_offers")
-    .select("store, price, currency, url, in_stock, fetched_at")
+    .select("store, price, currency, url, in_stock, rating, review_count, fetched_at")
     .eq("query", key)
     .gte("fetched_at", since)
     .order("price", { ascending: true })
