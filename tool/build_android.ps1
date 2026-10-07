@@ -2,7 +2,7 @@
   Builds the Android APK on this Windows machine.
 
   Why the workarounds: the project path contains an apostrophe and Turkish
-  characters ("FURKAN'S PC", "Darbogazhesaplayıcı") and the user profile path
+  characters (e.g. "USER'S PC", "Darbogazhesaplayıcı") and the user profile path
   contains a space. Android Gradle refuses non-ASCII project paths and Java
   cannot open its loopback socket from a temp dir with these characters.
   We therefore build from a subst drive (X:) and keep Gradle/temp files under

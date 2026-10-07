@@ -23,7 +23,7 @@ supabase/                 Postgres şeması (RLS) + price-search Edge Function
 
 ## Çalıştırma
 
-> ⚠️ Proje yolunda `'` karakteri (`FURKAN'S PC`) Dart test derleyicisini ve
+> ⚠️ Proje yolunda `'` karakteri (ör. `KULLANICI'S PC`) Dart test derleyicisini ve
 > Android Gradle'ı bozuyor. Komutları **`C:\src\darbogaz`** junction'ı
 > üzerinden çalıştır (aynı klasörü gösterir) ya da projeyi apostrofsuz bir
 > yola taşı.
