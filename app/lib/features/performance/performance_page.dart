@@ -1,0 +1,145 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:perf_engine/perf_engine.dart';
+
+import 'package:darbogaz/core/devices.dart';
+import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/features/analysis/analysis_page.dart';
+import 'package:darbogaz/features/analysis/compatibility_card.dart';
+import 'package:darbogaz/features/performance/ai_tab.dart';
+import 'package:darbogaz/features/performance/apps_tab.dart';
+import 'package:darbogaz/features/performance/games_tab.dart';
+import 'package:darbogaz/features/performance/phone_views.dart';
+import 'package:darbogaz/core/brand/truerig_logo.dart';
+
+enum _Section { summary, games, apps, ai, compat }
+
+extension on _Section {
+  String get label => switch (this) {
+    _Section.summary => 'Özet',
+    _Section.games => 'Oyun',
+    _Section.apps => 'Uygulama',
+    _Section.ai => 'AI',
+    _Section.compat => 'Uyumluluk',
+  };
+}
+
+const _deviceSections = [
+  _Section.summary,
+  _Section.games,
+  _Section.apps,
+  _Section.ai,
+];
+const _watchSections = [_Section.summary, _Section.compat];
+
+/// "Performans" tab: content follows the device chosen in "Cihaz".
+class PerformancePage extends ConsumerStatefulWidget {
+  const PerformancePage({super.key});
+
+  @override
+  ConsumerState<PerformancePage> createState() => _PerformancePageState();
+}
+
+class _PerformancePageState extends ConsumerState<PerformancePage> {
+  final Map<DeviceKind, _Section> _section = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = ref.watch(activeDeviceProvider);
+    final sections = kind == DeviceKind.watch
+        ? _watchSections
+        : _deviceSections;
+    final current = _section[kind] ?? _Section.summary;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: BrandTitle('Performans · ${kind.label}'),
+        actions: [
+          IconButton(
+            tooltip: 'Karşılaştır',
+            icon: const Icon(Icons.compare_arrows_rounded),
+            onPressed: () => context.push('/compare'),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: AppSegmented<_Section>(
+              values: sections,
+              selected: current,
+              labelOf: (s) => s.label,
+              onChanged: (s) => setState(() => _section[kind] = s),
+            ),
+          ),
+          Expanded(child: _body(kind, current)),
+        ],
+      ),
+    );
+  }
+
+  Widget _body(DeviceKind kind, _Section section) {
+    switch (kind) {
+      case DeviceKind.pc:
+        return switch (section) {
+          _Section.games => const GamesTab(),
+          _Section.apps => const AppsTab(),
+          _Section.ai => const AiTab(),
+          _ => const PcSummaryView(),
+        };
+      case DeviceKind.phone:
+        final spec = ref.watch(phoneSpecProvider);
+        if (spec == null) {
+          return _ChooseFirst(
+            icon: Icons.smartphone_rounded,
+            message: 'Performans için önce telefonunu seç.',
+          );
+        }
+        return switch (section) {
+          _Section.games => PhoneGamesView(spec: spec),
+          _Section.apps => PhoneAppsView(spec: spec),
+          _Section.ai => PhoneAiView(spec: spec),
+          _ => PhoneSummaryView(spec: spec),
+        };
+      case DeviceKind.watch:
+        final report = ref.watch(watchReportProvider);
+        if (report == null) {
+          return _ChooseFirst(
+            icon: Icons.watch_rounded,
+            message: 'Ayrıntılar için önce saatini seç.',
+          );
+        }
+        return switch (section) {
+          _Section.compat => ListView(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            children: [
+              CompatibilityCard(
+                report: CompatibilityReport(report.issues, null),
+              ),
+            ],
+          ),
+          _ => WatchSummaryView(report: report),
+        };
+    }
+  }
+}
+
+class _ChooseFirst extends StatelessWidget {
+  const _ChooseFirst({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => EmptyHint(
+    icon: icon,
+    message: message,
+    action: FilledButton(
+      onPressed: () => context.go('/device'),
+      child: const Text('Cihazıma git'),
+    ),
+  );
+}

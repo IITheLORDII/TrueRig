@@ -1,0 +1,17 @@
+.dart_tool/
+build/
+coverage/
+.packages
+*.iml
+.idea/
+.vscode/
+.env
+supabase/.temp/
+debug-info/
+.claude/
+*.log
+local.properties
+key.properties
+*.jks
+*.keystore
+mpns.txt
