@@ -111,10 +111,7 @@ class PhoneMobileView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.s),
-        Text(
-          kEstimateDisclaimer,
-          style: theme.textTheme.labelSmall?.copyWith(color: palette.muted),
-        ),
+        const AccuracyNote(),
       ],
     );
   }

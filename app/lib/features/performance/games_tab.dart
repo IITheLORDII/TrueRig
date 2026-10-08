@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/cards.dart';
+
 import 'package:darbogaz/core/widgets/flow.dart';
 
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -9,7 +11,6 @@ import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/widgets/term_info.dart';
 import 'package:darbogaz/core/providers.dart';
-import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/features/analysis/analysis_page.dart';
 import 'package:darbogaz/features/analysis/settings_bar.dart';
@@ -49,7 +50,6 @@ class GamesTab extends ConsumerWidget {
         message: 'Oyun FPS tahmini için bir ekran kartı da seç.',
       );
     }
-    final palette = context.palette;
     final selected = ref.watch(fpsEstimateProvider);
     return ListView(
       padding: Insets.page,
@@ -76,13 +76,11 @@ class GamesTab extends ConsumerWidget {
                   subtitle: _subtitle(e),
                 ),
               const SizedBox(height: 8),
-              Text(
-                '* GTA VI henüz PC\'de yok; değerler konsol verisi ve motor '
-                'gereksinimlerinden türetilmiş projeksiyondur.\n'
-                '$kEstimateDisclaimer',
-                style: Theme.of(context).textTheme.labelSmall
-                    ?.copyWith(color: palette.muted),
+              const Footnote(
+                '* GTA VI henüz bilgisayarda yok; değerler tahmindir.',
               ),
+              const SizedBox(height: Space.s),
+              const AccuracyNote(),
             ],
           ),
         ),

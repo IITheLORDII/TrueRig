@@ -99,10 +99,10 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
         ? SpecTextParser(catalog).parse(_query)
         : null;
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Hazır sistem'),
-        actions: const [HomeButton()],
       ),
       body: Column(
         children: [

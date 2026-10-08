@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -76,10 +78,10 @@ class _CartPageState extends ConsumerState<CartPage> {
     if (isLaptopBuild(build.cpu, gpu)) {
       final system = (label ?? '').split(' · ').first;
       return Scaffold(
+        bottomNavigationBar: const InnerNavBar(),
         appBar: AppBar(
           leading: const PageBackButton(),
           title: const BrandTitle('Sepeti hazırla'),
-          actions: const [HomeButton()],
         ),
         body: ListView(
           padding: Insets.page,
@@ -102,10 +104,10 @@ class _CartPageState extends ConsumerState<CartPage> {
     }
 
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Sepeti hazırla'),
-        actions: const [HomeButton()],
       ),
       body: build.parts.isEmpty
           ? StatView.empty(
@@ -169,10 +171,12 @@ class _CartPageState extends ConsumerState<CartPage> {
           ),
           const SizedBox(height: Space.s),
         ],
-        const Footnote(
-          'Mağazalar dışarıdan sepete ekleme izni vermiyor. Ürün sayfaları '
-          'açılır, sepete eklemeyi orada tek dokunuşla yaparsın. Fiyatlar '
-          'her gün güncellenir.',
+        const ExplainNote(
+          question: 'Neden sepete ben ekliyorum?',
+          answer:
+              'Mağazalar başka uygulamaların sepetlerine ürün eklemesine izin '
+              'vermiyor. Biz ürün sayfasını açarız, sen "Sepete ekle"ye '
+              'dokunursun. Fiyatlar her gün güncellenir.',
         ),
       ],
     );

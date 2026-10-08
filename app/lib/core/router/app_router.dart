@@ -163,23 +163,11 @@ class _Shell extends StatelessWidget {
 
   final StatefulNavigationShell shell;
 
-  static const _tabs = [
-    AppTab('Ana Sayfa', Icons.home_outlined, Icons.home_rounded),
-    AppTab('Cihazlarım', Icons.devices_outlined, Icons.devices_rounded),
-    AppTab('Analiz', Icons.insights_outlined, Icons.insights_rounded),
-    AppTab(
-      'Karşılaştır',
-      Icons.compare_arrows_outlined,
-      Icons.compare_arrows_rounded,
-    ),
-    AppTab('Parça Ara', Icons.sell_outlined, Icons.sell_rounded),
-  ];
-
   @override
   Widget build(BuildContext context) => Scaffold(
     body: TabBackScope(shell: shell, child: shell),
     bottomNavigationBar: AppBottomBar(
-      tabs: _tabs,
+      tabs: kAppTabs,
       currentIndex: shell.currentIndex,
       onTap: (i) => shell.goBranch(i, initialLocation: i == shell.currentIndex),
     ),

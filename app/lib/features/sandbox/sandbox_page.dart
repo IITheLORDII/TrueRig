@@ -95,11 +95,11 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
     final ctl = ref.read(sandboxProvider.notifier);
 
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Kaydetmeden dene'),
         actions: [
-          const HomeButton(),
           IconButton(
             tooltip: 'Temizle',
             icon: const Icon(Icons.restart_alt_rounded),

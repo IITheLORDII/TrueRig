@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
@@ -98,38 +100,51 @@ class GeneralBottleneckCard extends StatelessWidget {
       title: 'Genel darboğaz',
       term: Term.bottleneck,
       icon: Icons.speed_rounded,
-      trailing: VerdictChip(
-        '${g.resolution.label} · Yüksek',
-        tone: Tone.neutral,
-      ),
+      trailing: VerdictChip(g.resolution.label, tone: Tone.neutral),
       child: Column(
         children: [
           BottleneckGauge(
             percent: g.bottleneckPercent,
             caption: limiterCaption(g.limiter),
           ),
-          Text(
-            '${g.perGame.length} oyunun $cpuGames tanesinde işlemci, '
-            '${g.perGame.length - cpuGames} tanesinde ekran kartı sınırlıyor.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall?.copyWith(color: palette.muted),
-          ),
-          const SizedBox(height: Space.m),
           ScoreScale.bottleneck(context, g.bottleneckPercent),
           const SizedBox(height: Space.m),
-          MetricBar(
-            label: 'İşlemcinin besleyebildiği (ort.)',
-            value: cpuCap,
-            max: maxCap,
-            valueText: '${cpuCap.round()} FPS',
-            color: g.limiter == Limiter.cpu ? palette.bad : palette.good,
-          ),
-          MetricBar(
-            label: 'Ekran kartının çizebildiği (ort.)',
-            value: gpuCap,
-            max: maxCap,
-            valueText: '${gpuCap.round()} FPS',
-            color: g.limiter == Limiter.gpu ? palette.bad : palette.good,
+          Explain(
+            question: 'Hangi parça yavaşlatıyor?',
+            icon: Icons.manage_search_rounded,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '${g.perGame.length} oyunun $cpuGames tanesinde işlemci, '
+                  '${g.perGame.length - cpuGames} tanesinde ekran kartı '
+                  'hızı belirliyor.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: Space.s),
+                MetricBar(
+                  label: 'İşlemcinin yetiştirebildiği',
+                  value: cpuCap,
+                  max: maxCap,
+                  valueText: '${cpuCap.round()} FPS',
+                  color: g.limiter == Limiter.cpu ? palette.bad : palette.good,
+                ),
+                MetricBar(
+                  label: 'Ekran kartının çizebildiği',
+                  value: gpuCap,
+                  max: maxCap,
+                  valueText: '${gpuCap.round()} FPS',
+                  color: g.limiter == Limiter.gpu ? palette.bad : palette.good,
+                ),
+                const SizedBox(height: Space.xs),
+                Text(
+                  'Düşük olan çubuk, oyunun hızını sınırlayan parçadır.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: palette.muted,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

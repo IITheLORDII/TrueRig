@@ -115,6 +115,21 @@ class AppTab {
   final IconData activeIcon;
 }
 
+/// The five main sections, in bottom bar order, with their addresses.
+const kAppTabs = [
+  AppTab('Ana Sayfa', Icons.home_outlined, Icons.home_rounded),
+  AppTab('Cihazlarım', Icons.devices_outlined, Icons.devices_rounded),
+  AppTab('Analiz', Icons.insights_outlined, Icons.insights_rounded),
+  AppTab(
+    'Karşılaştır',
+    Icons.compare_arrows_outlined,
+    Icons.compare_arrows_rounded,
+  ),
+  AppTab('Parça Ara', Icons.sell_outlined, Icons.sell_rounded),
+];
+
+const kTabPaths = ['/home', '/devices', '/analysis', '/compare', '/prices'];
+
 class AppBottomBar extends StatelessWidget {
   const AppBottomBar({
     super.key,

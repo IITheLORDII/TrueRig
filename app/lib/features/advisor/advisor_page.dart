@@ -58,11 +58,12 @@ class _AdvisorPageState extends ConsumerState<AdvisorPage> {
         appBar: AppBar(
           leading: const PageBackButton(),
           title: const BrandTitle('Sana uygun bilgisayar'),
-          actions: const [HomeButton()],
         ),
-        bottomNavigationBar: _step == 4
-            ? null
-            : StickyActionBar(
+        bottomNavigationBar: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_step != 4)
+              StickyActionBar(
                 secondary: _step == 0
                     ? null
                     : TertiaryButton(label: 'Geri', onPressed: _back),
@@ -71,6 +72,9 @@ class _AdvisorPageState extends ConsumerState<AdvisorPage> {
                   onPressed: _step == 0 && _uses.isEmpty ? null : _next,
                 ),
               ),
+            const InnerNavBar(),
+          ],
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

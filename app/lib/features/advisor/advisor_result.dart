@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -83,25 +85,21 @@ class AdvisorResult extends ConsumerWidget {
           _OptionCard(option: o),
           const SizedBox(height: Space.cardGap),
         ],
-        SectionCard(
-          title: 'Dikkat et',
-          icon: Icons.warning_amber_rounded,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (final c in advice.cautions)
-                BulletRow(
-                  c,
-                  icon: Icons.error_outline_rounded,
-                  color: context.palette.warn,
-                ),
-            ],
+        if (advice.cautions.isNotEmpty) ...[
+          Explain(
+            question: 'Dikkat et: satın alırken nelere bakmalı?',
+            icon: Icons.warning_amber_rounded,
+            color: context.palette.warn,
+            points: advice.cautions,
           ),
-        ),
-        const SizedBox(height: Space.s),
-        const Footnote(
-          'Fiyatlar tahminidir (liste fiyatı × güncel kur, vergiler dahil). '
-          'Mağaza fiyatları için "Fiyatlara bak"a dokun.',
+          const SizedBox(height: Space.s),
+        ],
+        const ExplainNote(
+          question: 'Fiyatlar nasıl hesaplandı?',
+          answer:
+              'Bunlar tahmini fiyatlardır: ürünün liste fiyatı bugünkü dolar '
+              'kuruyla çevrildi, vergiler eklendi. Gerçek fiyat için '
+              '"Fiyatlara bak"a dokun.',
         ),
         const SizedBox(height: Space.l),
         TertiaryButton(
@@ -112,6 +110,15 @@ class AdvisorResult extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// "A, b, c." → ["A", "B", "C"]: one reason per line.
+List<String> _reasons(String why) {
+  final parts = why
+      .replaceAll(RegExp(r'\.$'), '')
+      .split(', ')
+      .where((p) => p.trim().isNotEmpty);
+  return [for (final p in parts) '${p[0].toUpperCase()}${p.substring(1)}.'];
 }
 
 class _OptionCard extends ConsumerWidget {
@@ -143,9 +150,13 @@ class _OptionCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(option.name, style: theme.textTheme.titleSmall),
-          const SizedBox(height: Space.xs),
-          Text(option.why, style: theme.textTheme.bodyMedium),
+          Text(option.name, style: theme.textTheme.titleMedium),
+          const SizedBox(height: Space.m),
+          Explain(
+            question: 'Neden bu önerildi?',
+            icon: Icons.lightbulb_outline_rounded,
+            points: _reasons(option.why),
+          ),
           const SizedBox(height: Space.m),
           ActionRow(
             secondary: TertiaryButton(

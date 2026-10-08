@@ -24,8 +24,11 @@ void main() {
     await tapText(tester, 'Önerileri göster');
 
     expect(find.text('En uygun'), findsOneWidget);
-    expect(find.text('Dikkat et'), findsOneWidget);
+    // Reasons and cautions open from question buttons.
+    expect(find.textContaining('Ekran kartı olmayan'), findsNothing);
+    await tapText(tester, 'Dikkat et: satın alırken nelere bakmalı?');
     expect(find.textContaining('Ekran kartı olmayan'), findsOneWidget);
+    await tapText(tester, 'Neden bu önerildi?');
     expect(find.textContaining('FPS'), findsWidgets);
   });
 
@@ -37,6 +40,7 @@ void main() {
     expect(find.text('Laptop mu, masaüstü mü?'), findsOneWidget);
     await tapText(tester, 'Devam');
     await tapText(tester, 'Önerileri göster');
+    await tapText(tester, 'Dikkat et: satın alırken nelere bakmalı?');
     expect(
       find.textContaining('Oyuncu bilgisayarına gerek yok'),
       findsOneWidget,

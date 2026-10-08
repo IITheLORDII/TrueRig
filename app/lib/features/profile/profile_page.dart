@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/term_info.dart';
+
+import 'package:darbogaz/core/widgets/explain.dart';
+
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -19,10 +23,10 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Profil'),
-        actions: const [HomeButton()],
       ),
       body: ListView(
         padding: Insets.page,
@@ -51,26 +55,27 @@ class ProfilePage extends ConsumerWidget {
             onTap: () => context.push('/welcome'),
           ),
           const SizedBox(height: Space.cardGap),
-          const SectionCard(
-            title: 'Tahminler hakkında',
-            icon: Icons.info_outline_rounded,
+          SectionCard(
+            title: 'Sık sorulanlar',
+            icon: Icons.help_outline_rounded,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                BulletRow(
-                  'FPS, işlemcinin hazırlayabildiği ve ekran kartının '
-                  'çizebildiği kare sayısından hesaplanır.',
+                Explain.term(Term.bottleneck),
+                const SizedBox(height: Space.s),
+                Explain.term(Term.fps),
+                const SizedBox(height: Space.s),
+                const Explain(
+                  question: 'Fiyatlar nereden geliyor?',
+                  answer:
+                      'Mağazaların herkese açık sayfalarından günde bir kez '
+                      'toplanır. Son fiyat için mağazaya bak.',
                 ),
-                BulletRow(
-                  'Darboğaz yüzdesi, güçlü parçanın ne kadarının boşta '
-                  'kaldığını gösterir.',
+                const SizedBox(height: Space.s),
+                const Explain(
+                  question: 'Bu sayılar ne kadar doğru?',
+                  answer: kEstimateDisclaimer,
                 ),
-                BulletRow(
-                  'Fiyatlar mağazaların herkese açık sayfalarından günde bir '
-                  'kez toplanır. Son fiyat için mağazaya bak.',
-                ),
-                SizedBox(height: Space.xs),
-                Footnote(kEstimateDisclaimer),
               ],
             ),
           ),

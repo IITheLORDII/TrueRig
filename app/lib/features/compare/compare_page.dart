@@ -11,7 +11,6 @@ import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
-import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
@@ -228,7 +227,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
               CompareTable(section: s, mine: c.mine!, other: c.other!),
               const SizedBox(height: Space.s),
             ],
-            const Footnote(kEstimateDisclaimer),
+            const AccuracyNote(),
           ],
         ],
       ),

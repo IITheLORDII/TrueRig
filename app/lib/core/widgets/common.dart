@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:darbogaz/core/widgets/term_info.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -23,7 +24,7 @@ class SectionCard extends StatelessWidget {
   final Widget? trailing;
   final bool hero;
 
-  /// Shows an ⓘ that explains the technical word in the title.
+  /// Adds a "… nedir?" button under the card that explains the word.
   final Term? term;
 
   @override
@@ -41,12 +42,15 @@ class SectionCard extends StatelessWidget {
                 const SizedBox(width: Space.s),
               ],
               Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
-              if (term != null) TermInfoButton(term!),
               ?trailing,
             ],
           ),
           const SizedBox(height: Space.m),
           child,
+          if (term != null) ...[
+            const SizedBox(height: Space.m),
+            Explain.term(term!),
+          ],
         ],
       ),
     );
@@ -256,6 +260,17 @@ class SkeletonBar extends StatelessWidget {
       color: context.palette.surfaceAlt,
       borderRadius: BorderRadius.circular(Radii.s),
     ),
+  );
+}
+
+/// "Bu sayılar ne kadar doğru?" button under every estimate.
+class AccuracyNote extends StatelessWidget {
+  const AccuracyNote({super.key});
+
+  @override
+  Widget build(BuildContext context) => const ExplainNote(
+    question: 'Bu sayılar ne kadar doğru?',
+    answer: kEstimateDisclaimer,
   );
 }
 

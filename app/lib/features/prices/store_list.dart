@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -274,13 +276,15 @@ class _StoreListState extends ConsumerState<StoreList> {
               ),
             ),
           const SizedBox(height: Space.xs),
-          Footnote(
-            [
-              'Fiyatlar her gün mağazaların herkese açık ürün sayfalarından '
-                  'okunur. Son fiyat için mağazaya bak.',
-              if (at != null) 'Son güncelleme: ${_stamp(at)}.',
+          if (at != null) Footnote('Son güncelleme: ${_stamp(at)}'),
+          const SizedBox(height: Space.s),
+          ExplainNote(
+            question: 'Fiyatlar nereden geliyor?',
+            answer: [
+              'Her gün mağazaların herkese açık ürün sayfalarından okunur. '
+                  'Fiyat değişmiş olabilir; son fiyatı mağazada gör.',
               if (result?.imageSource != null)
-                'Görsel: ${result!.imageSource!.host}',
+                'Görsel: ${result!.imageSource!.host}.',
             ].join(' '),
           ),
         ],

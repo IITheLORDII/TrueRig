@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/explain.dart';
+
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -81,10 +83,10 @@ class _DetectPageState extends ConsumerState<DetectPage> {
   Widget build(BuildContext context) {
     final detection = ref.watch(detectionProvider);
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Sistemini Algıla'),
-        actions: const [HomeButton()],
       ),
       body: ListView(
         padding: Insets.page,
@@ -149,14 +151,15 @@ class _ConsentCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (canProbeBrowser) ...[
-            const BulletRow(
-              'Ekran kartı modelini, işlemci çekirdek sayısını ve ekran '
-              'çözünürlüğünü okuruz.',
-              icon: Icons.check_rounded,
-            ),
-            const BulletRow(
-              'Bilgiler cihazından çıkmaz, hiçbir yere gönderilmez.',
+            const Explain(
+              question: 'Neleri okuyorsunuz?',
               icon: Icons.lock_outline_rounded,
+              points: [
+                'Ekran kartının adı.',
+                'İşlemcinin çekirdek sayısı.',
+                'Ekranının çözünürlüğü.',
+                'Bilgiler cihazından çıkmaz, hiçbir yere gönderilmez.',
+              ],
             ),
             const SizedBox(height: Space.m),
             PrimaryButton(
@@ -326,9 +329,12 @@ class _HelperCard extends StatelessWidget {
             'aşağıya yapıştır.',
             icon: Icons.content_paste_rounded,
           ),
-          const Footnote(
-            'Araç yalnızca işlemci, RAM ve anakart bilgisini okur. Hiçbir şey '
-            'yüklemez, internete bir şey göndermez.',
+          const SizedBox(height: Space.s),
+          const ExplainNote(
+            question: 'Bu araç güvenli mi?',
+            answer:
+                'Araç yalnızca işlemci, RAM ve anakart bilgisini okur. Hiçbir '
+                'şey yüklemez, internete bir şey göndermez.',
           ),
           const SizedBox(height: Space.m),
           SecondaryButton(

@@ -43,10 +43,10 @@ class _ScannerPageState extends State<ScannerPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    bottomNavigationBar: const InnerNavBar(),
     appBar: AppBar(
       leading: const PageBackButton(),
       title: const BrandTitle('Barkod / Seri No Tara'),
-      actions: const [HomeButton()],
     ),
     body: Stack(
       fit: StackFit.expand,

@@ -58,10 +58,10 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
     final rows = _rank(parts, build);
 
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: BrandTitle('${widget.category.label} seç'),
-        actions: const [HomeButton()],
       ),
       body: Column(
         children: [

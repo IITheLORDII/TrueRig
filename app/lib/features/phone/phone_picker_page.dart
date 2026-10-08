@@ -34,9 +34,9 @@ class _PhonePickerPageState extends ConsumerState<PhonePickerPage> {
     final catalog = ref.watch(mobileCatalogProvider);
     final phones = catalog.searchPhones(_query, brand: _brand);
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
-        actions: const [HomeButton()],
         title: BrandTitle(switch (widget.mode) {
           'pair' => 'Saatin telefonu',
           'compare' => 'Karşılaştırılacak telefon',

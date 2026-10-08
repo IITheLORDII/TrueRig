@@ -19,9 +19,7 @@ class HomeAdvisorCard extends StatelessWidget {
     emphasized: true,
     icon: Icons.lightbulb_rounded,
     title: 'Bilgisayarı ne için alıyorsun?',
-    subtitle:
-        'Birkaç kısa soru. İşine gerçekten yetecek bilgisayarı önerelim, '
-        'yanlış alımdan kurtul.',
+    subtitle: 'Birkaç kolay soru, sana uygun bilgisayar.',
     onTap: () => context.push('/advisor'),
   );
 }
@@ -112,10 +110,7 @@ class HomeTryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Footnote(
-            'Modellerde gez, PC topla, karşılaştır. Hiçbir şey kaydedilmez, '
-            'uygulama kapanınca silinir.',
-          ),
+          const Footnote('Dene, karşılaştır. Hiçbir şey kaydedilmez.'),
           const SizedBox(height: Space.m),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

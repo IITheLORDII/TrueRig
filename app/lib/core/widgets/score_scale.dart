@@ -51,7 +51,6 @@ class ScoreScale extends StatelessWidget {
         ScaleZone(until: 20, label: 'Orta', color: p.warn),
         ScaleZone(until: 50, label: 'Aşırı darboğaz', color: p.bad),
       ],
-      caption: '%0–10 güvenli · %10–20 orta · %20 üstü aşırı darboğaz',
     );
   }
 
@@ -66,9 +65,6 @@ class ScoreScale extends StatelessWidget {
         ScaleZone(until: 75, label: 'Orta', color: p.warn),
         ScaleZone(until: 110, label: 'Güvenli', color: p.good),
       ],
-      caption:
-          '75+ güvenli · 50–75 orta · 50 altı aşırı darboğaz '
-          '(puan yükseldikçe darboğaz azalır)',
     );
   }
 

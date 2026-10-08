@@ -56,10 +56,10 @@ void main() {
     );
   });
 
-  testWidgets('ⓘ explains a technical word', (tester) async {
+  testWidgets('a question button explains a technical word', (tester) async {
     await pumpApp(tester, build: _SeededBuild.new);
     await tapText(tester, 'Ryzen 5 5600 + GeForce RTX 4090');
-    await tap(tester, find.byTooltip('Darboğaz nedir?'));
+    await tapText(tester, 'Darboğaz nedir?');
     expect(
       find.textContaining('Bir parçanın diğerini yavaşlatmasıdır'),
       findsOneWidget,

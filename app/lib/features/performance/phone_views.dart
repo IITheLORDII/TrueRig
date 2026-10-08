@@ -126,10 +126,7 @@ class PhoneSummaryView extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          kEstimateDisclaimer,
-          style: theme.textTheme.labelSmall?.copyWith(color: palette.muted),
-        ),
+        const AccuracyNote(),
       ],
     );
   }

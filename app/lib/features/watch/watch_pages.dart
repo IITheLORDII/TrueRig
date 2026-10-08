@@ -115,10 +115,10 @@ class _WatchPickerPageState extends ConsumerState<WatchPickerPage> {
     final catalog = ref.watch(mobileCatalogProvider);
     final watches = catalog.searchWatches(_query, brand: _brand);
     return Scaffold(
+      bottomNavigationBar: const InnerNavBar(),
       appBar: AppBar(
         leading: const PageBackButton(),
         title: const BrandTitle('Saat seç'),
-        actions: const [HomeButton()],
       ),
       body: Column(
         children: [
