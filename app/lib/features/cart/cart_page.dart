@@ -10,7 +10,10 @@ import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/features/cart/cart_plan.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
@@ -79,12 +82,7 @@ class _CartPageState extends ConsumerState<CartPage> {
           actions: const [HomeButton()],
         ),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            Space.page,
-            Space.xs,
-            Space.page,
-            Space.xl,
-          ),
+          padding: Insets.page,
           children: [
             Text(
               'Dizüstü bilgisayarların parçaları ayrı satılmaz; '
@@ -110,34 +108,18 @@ class _CartPageState extends ConsumerState<CartPage> {
         actions: const [HomeButton()],
       ),
       body: build.parts.isEmpty
-          ? EmptyHint(
+          ? StatView.empty(
               icon: Icons.shopping_cart_outlined,
               message: 'Önce parçalarını seç.',
-              action: FilledButton(
-                onPressed: () => context.pop(),
-                child: const Text('Geri dön'),
-              ),
+              actionLabel: 'Parça seç',
+              onAction: () => context.go('/devices?kind=pc'),
             )
           : ref
                 .watch(cartOffersProvider(key))
                 .when(
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(Space.page),
-                    child: Column(
-                      children: [
-                        SkeletonBar(),
-                        SkeletonBar(width: 240),
-                        SkeletonBar(),
-                      ],
-                    ),
-                  ),
-                  error: (e, _) => EmptyHint(
-                    icon: Icons.cloud_off_rounded,
-                    message: 'Fiyatlar alınamadı. Bağlantını kontrol et.',
-                    action: FilledButton(
-                      onPressed: () => ref.invalidate(cartOffersProvider(key)),
-                      child: const Text('Tekrar dene'),
-                    ),
+                  loading: () => const StatView.loading(lines: 5),
+                  error: (e, _) => StatView.error(
+                    onAction: () => ref.invalidate(cartOffersProvider(key)),
                   ),
                   data: (parts) => _body(parts),
                 ),
@@ -154,13 +136,8 @@ class _CartPageState extends ConsumerState<CartPage> {
     ];
     final amazon = amazonCartUrl(asins);
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Space.page,
-        Space.xs,
-        Space.page,
-        Space.xl,
-      ),
+    final list = ListView(
+      padding: Insets.page,
       children: [
         _Summary(parts: parts, mix: mix, single: single),
         const SizedBox(height: Space.s),
@@ -183,29 +160,68 @@ class _CartPageState extends ConsumerState<CartPage> {
           const SizedBox(height: Space.s),
         ],
         if (amazon != null) ...[
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.shopping_cart_checkout_rounded),
-              title: Text('${asins.length} parçayı Amazon sepetine ekle'),
-              subtitle: const Text(
-                'Amazon sepetin açılır; ödemeyi orada yaparsın.',
-              ),
-              trailing: const Icon(Icons.open_in_new_rounded),
-              onTap: () => openStoreUrl(context, amazon),
-            ),
+          NavCard(
+            icon: Icons.shopping_cart_checkout_rounded,
+            title: '${asins.length} parçayı Amazon sepetine ekle',
+            subtitle: 'Amazon sepetin açılır, ödemeyi orada yaparsın.',
+            trailing: const Icon(Icons.open_in_new_rounded),
+            onTap: () => openStoreUrl(context, amazon),
           ),
           const SizedBox(height: Space.s),
         ],
-        Text(
-          'Mağazalar dışarıdan sepete ekleme izni vermediği için ürün '
-          'sayfaları açılır; sepete eklemeyi orada tek dokunuşla yaparsın. '
-          'Fiyatlar her gün güncellenir.',
-          style: Theme.of(context).textTheme.labelSmall
-              ?.copyWith(color: context.palette.muted),
+        const Footnote(
+          'Mağazalar dışarıdan sepete ekleme izni vermiyor. Ürün sayfaları '
+          'açılır, sepete eklemeyi orada tek dokunuşla yaparsın. Fiyatlar '
+          'her gün güncellenir.',
+        ),
+      ],
+    );
+    if (plan.baskets.isEmpty) return list;
+    return Column(
+      children: [
+        Expanded(child: list),
+        StickyActionBar(
+          leading: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Toplam',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              Text(
+                '~${formatPrice(plan.total, 'TRY')}',
+                style: numberStyle(context, size: 20),
+              ),
+            ],
+          ),
+          primary: PrimaryButton(
+            icon: Icons.open_in_new_rounded,
+            label: plan.baskets.length == 1
+                ? '${plan.baskets.first.store}\'da aç'
+                : '${plan.baskets.length} mağazada aç',
+            onPressed: () async {
+              for (final b in plan.baskets) {
+                if (!await openBasket(b)) break;
+              }
+            },
+          ),
         ),
       ],
     );
   }
+}
+
+/// Opens every product page of a store basket; false when one fails.
+Future<bool> openBasket(StoreBasket basket) async {
+  for (final i in basket.items) {
+    final ok = await launchUrl(
+      i.offer.url,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok) return false;
+  }
+  return true;
 }
 
 class _Summary extends StatelessWidget {
@@ -222,7 +238,7 @@ class _Summary extends StatelessWidget {
     final estimate = mix.missingEstimate;
     return SectionCard(
       hero: true,
-      title: 'Toplam',
+      title: 'Özet',
       icon: Icons.shopping_cart_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,19 +290,8 @@ class _BasketCard extends StatelessWidget {
 
   final StoreBasket basket;
 
-  Future<void> _openAll(BuildContext context) async {
-    for (final i in basket.items) {
-      final ok = await launchUrl(
-        i.offer.url,
-        mode: LaunchMode.externalApplication,
-      );
-      if (!ok) break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SectionCard(
       title: basket.store,
       icon: Icons.storefront_rounded,
@@ -299,7 +304,6 @@ class _BasketCard extends StatelessWidget {
         children: [
           for (final i in basket.items)
             ListTile(
-              dense: true,
               contentPadding: EdgeInsets.zero,
               leading: Icon(i.part.category.icon),
               title: Text(i.part.displayName),
@@ -318,21 +322,13 @@ class _BasketCard extends StatelessWidget {
               onTap: () => openStoreUrl(context, i.offer.url),
             ),
           const SizedBox(height: Space.xs),
-          FilledButton.tonalIcon(
-            onPressed: () => _openAll(context),
-            icon: const Icon(Icons.open_in_new_rounded),
-            label: Text(
-              basket.items.length == 1
-                  ? '${basket.store}\'da ürünü aç'
-                  : '${basket.store}\'da ${basket.items.length} ürünü aç',
-            ),
-          ),
-          Text(
-            'Her ürün kendi sayfasında açılır; sepete ekle düğmesine basman '
-            'yeterli.',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: context.palette.muted,
-            ),
+          SecondaryButton(
+            expand: true,
+            onPressed: () => openBasket(basket),
+            icon: Icons.open_in_new_rounded,
+            label: basket.items.length == 1
+                ? '${basket.store}\'da ürünü aç'
+                : '${basket.store}\'da ${basket.items.length} ürünü aç',
           ),
         ],
       ),
@@ -354,7 +350,6 @@ class _MissingCard extends StatelessWidget {
         children: [
           for (final p in parts)
             ListTile(
-              dense: true,
               contentPadding: EdgeInsets.zero,
               leading: Icon(p.part.category.icon),
               title: Text(p.part.displayName),
