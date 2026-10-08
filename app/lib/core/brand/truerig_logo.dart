@@ -171,7 +171,8 @@ class TrueRigWordmark extends StatelessWidget {
   }
 }
 
-/// App-bar title: logo + "TrueRig", with the page name underneath.
+/// App-bar title: the page name is what matters, so it is the largest
+/// text; a small logo + "TrueRig" line sits above it.
 class BrandTitle extends StatelessWidget {
   const BrandTitle(this.page, {super.key});
 
@@ -179,10 +180,10 @@ class BrandTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final theme = Theme.of(context);
     return Semantics(
       header: true,
-      label: '$kAppName, $page',
+      label: '$page, $kAppName',
       child: ExcludeSemantics(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -190,17 +191,19 @@ class BrandTitle extends StatelessWidget {
             const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TrueRigMark(size: 22),
-                SizedBox(width: 6),
-                TrueRigWordmark(fontSize: 18),
+                TrueRigMark(size: 14),
+                SizedBox(width: 4),
+                TrueRigWordmark(fontSize: 12),
               ],
             ),
+            const SizedBox(height: 2),
             Text(
               page,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium
-                  ?.copyWith(color: muted, fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

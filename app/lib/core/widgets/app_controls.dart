@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:darbogaz/core/theme/tokens.dart';
+
 // One shared look on iOS, Android and web: no platform branching.
 
 /// Compact sliding segmented control.
@@ -31,17 +33,16 @@ class AppSegmented<T extends Object> extends StatelessWidget {
         children: {
           for (final v in values)
             v: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  labelOf(v),
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: v == selected ? scheme.onPrimary : scheme.onSurface,
-                  ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+              // Wraps to two lines instead of shrinking large text.
+              child: Text(
+                labelOf(v),
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: v == selected ? scheme.onPrimary : scheme.onSurface,
                 ),
               ),
             ),
@@ -77,7 +78,7 @@ Future<T?> showOptionSheet<T>({
         controller: scroll,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+            padding: const EdgeInsets.fromLTRB(Space.xl, 0, Space.xl, Space.s),
             child: Text(title, style: Theme.of(ctx).textTheme.titleMedium),
           ),
           for (final o in options)

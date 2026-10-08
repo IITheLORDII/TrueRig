@@ -31,29 +31,22 @@ class SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final content = Padding(
-      padding: const EdgeInsets.all(Space.m),
+      padding: Insets.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 18, color: theme.colorScheme.primary),
+                Icon(icon, size: IconSizes.s, color: theme.colorScheme.primary),
                 const SizedBox(width: Space.s),
               ],
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
               if (term != null) TermInfoButton(term!),
               ?trailing,
             ],
           ),
-          const SizedBox(height: Space.s),
+          const SizedBox(height: Space.m),
           child,
         ],
       ),
@@ -73,11 +66,7 @@ class HeroFrame extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(Radii.l),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [kBrandCyan, kBrandViolet],
-      ),
+      gradient: kBrandGradient,
     ),
     child: Padding(
       padding: const EdgeInsets.all(1.5),
@@ -184,7 +173,7 @@ class StatusPill extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: Space.s, vertical: 3),
     decoration: BoxDecoration(
       color: color.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(Radii.l),
+      borderRadius: BorderRadius.circular(Radii.pill),
     ),
     child: Text(
       text,
@@ -286,7 +275,7 @@ class EmptyHint extends StatelessWidget {
           if (icon == null)
             const Opacity(opacity: 0.8, child: TrueRigMark(size: 56))
           else
-            Icon(icon, size: 48, color: context.palette.muted),
+            Icon(icon, size: IconSizes.xl, color: context.palette.muted),
           const SizedBox(height: Space.l),
           Text(
             message,

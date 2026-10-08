@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/verdicts.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+
+export 'package:darbogaz/core/verdicts.dart' show fpsWord;
 
 /// One-sentence answer to "so is it good?" for people who do not know
 /// what a bottleneck or FPS is.
@@ -19,13 +22,6 @@ class PlainVerdict {
   final String detail;
   final Tone tone;
 }
-
-/// 60+ smooth, 30–60 playable, below 30 stutters.
-String fpsWord(double fps) => fps >= 60
-    ? 'akıcı'
-    : fps >= 30
-    ? 'oynanır'
-    : 'takılır';
 
 /// Typical FPS over the game library (geometric mean: one very light game
 /// does not hide a struggling system).
@@ -58,7 +54,7 @@ PlainVerdict pcVerdict(SystemBottleneck general) {
       tone: strong ? Tone.bad : Tone.warn,
     );
   }
-  if (fps >= 60) {
+  if (fps >= kFpsSmooth) {
     return PlainVerdict(
       title: 'Bilgisayarın oyunlar için iyi',
       detail:
@@ -67,7 +63,7 @@ PlainVerdict pcVerdict(SystemBottleneck general) {
       tone: Tone.good,
     );
   }
-  if (fps >= 30) {
+  if (fps >= kFpsPlayable) {
     return PlainVerdict(
       title: 'Oyunlar oynanır, ekran kartı sınırda',
       detail:
