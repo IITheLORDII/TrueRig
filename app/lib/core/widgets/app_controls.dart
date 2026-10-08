@@ -33,16 +33,24 @@ class AppSegmented<T extends Object> extends StatelessWidget {
         children: {
           for (final v in values)
             v: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-              // Wraps to two lines instead of shrinking large text.
-              child: Text(
-                labelOf(v),
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: v == selected ? scheme.onPrimary : scheme.onSurface,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              // 48 px tall tap target; wraps to two lines instead of
+              // shrinking large text.
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: kMinTap),
+                child: Center(
+                  child: Text(
+                    labelOf(v),
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: v == selected
+                          ? scheme.onPrimary
+                          : scheme.onSurface,
+                    ),
+                  ),
                 ),
               ),
             ),
