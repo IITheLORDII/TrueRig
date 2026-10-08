@@ -36,7 +36,7 @@ GoRouter createRouter() => GoRouter(
   navigatorKey: _rootKey,
   initialLocation: '/splash',
   routes: [
-    // The website opens on hardware detection; the apps on "Cihazlarım".
+    // Everyone lands on Ana Sayfa; the website asks about detection there.
     // First launch shows the welcome tour; later launches go straight on.
     _page(
       '/splash',

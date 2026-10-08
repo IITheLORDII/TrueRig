@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -30,7 +29,8 @@ class PendingAdd extends Notifier<DeviceKind?> {
 }
 
 /// Where the app goes after the splash / tour.
-String homeRoute() => kIsWeb ? '/detect' : '/home';
+/// The website asks about detection in a small popup on Ana Sayfa.
+String homeRoute() => '/home';
 
 /// Three-page welcome tour; "Atla" is always available.
 class OnboardingPage extends ConsumerStatefulWidget {

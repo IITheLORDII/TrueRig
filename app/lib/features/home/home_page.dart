@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/detect/detect_prompt.dart';
 import 'package:darbogaz/features/onboarding/onboarding_page.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
@@ -427,8 +428,13 @@ class _More extends ConsumerWidget {
 }
 
 /// Opens the "add" sheet for the device picked on the welcome tour, once.
+/// On the website it otherwise asks once, in a small popup, whether to
+/// recognise this computer (instead of a full detection page).
 class _PendingAdd extends ConsumerWidget {
   const _PendingAdd();
+
+  /// A popup is already scheduled or open.
+  static bool _busy = false;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -438,6 +444,12 @@ class _PendingAdd extends ConsumerWidget {
         if (!context.mounted) return;
         ref.read(pendingAddProvider.notifier).set(null);
         showAddDeviceSheet(context, ref, kind);
+      });
+    } else if (!_busy && shouldAskDetect(ref)) {
+      _busy = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (context.mounted) await showDetectPrompt(context, ref);
+        _busy = false;
       });
     }
     return const SizedBox.shrink();
