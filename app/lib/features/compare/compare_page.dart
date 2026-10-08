@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
@@ -134,6 +135,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const TabBackButton(),
         title: const BrandTitle('Karşılaştır'),
         actions: const [ProfileAction()],
       ),

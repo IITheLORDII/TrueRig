@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
@@ -101,7 +102,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
       appBar: AppBar(
         // Catalog products have their own close button on the card.
         leading: _query.isEmpty || match != null
-            ? null
+            ? const TabBackButton()
             : IconButton(
                 tooltip: 'Ürünü kapat',
                 icon: const Icon(Icons.close_rounded),

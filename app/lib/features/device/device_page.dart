@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/features/device/device_slots.dart';
@@ -51,6 +52,7 @@ class _DevicesPageState extends ConsumerState<DevicesPage> {
     final kind = ref.watch(activeDeviceProvider);
     return Scaffold(
       appBar: AppBar(
+        leading: const TabBackButton(),
         title: const BrandTitle('Cihazlarım'),
         actions: [
           // PC hardware can only be read on the website, not on a phone.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/features/device/add_device_sheet.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
@@ -71,6 +72,7 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const TabBackButton(),
         title: const BrandTitle('Analiz'),
         actions: const [ProfileAction()],
       ),

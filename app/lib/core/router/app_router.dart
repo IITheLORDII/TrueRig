@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/features/cart/cart_page.dart';
 import 'package:darbogaz/features/onboarding/onboarding_page.dart';
 import 'package:darbogaz/core/devices.dart';
@@ -171,7 +172,7 @@ class _Shell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: shell,
+    body: TabBackScope(shell: shell, child: shell),
     bottomNavigationBar: AppBottomBar(
       tabs: _tabs,
       currentIndex: shell.currentIndex,
