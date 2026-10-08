@@ -7,7 +7,10 @@ import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 import 'package:darbogaz/features/prices/price_index.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
@@ -158,7 +161,23 @@ List<StoreRow> mergeStores(
   return rows;
 }
 
-/// "Mağazalar": every store with its price, sortable by price / rating.
+/// How the cheapest offer compares with the usual price (list price ×
+/// today's rate): within ±8 % is normal.
+(String, Tone)? priceLevel(double cheapest, double? usual) {
+  if (usual == null || usual <= 0) return null;
+  final r = cheapest / usual;
+  if (r < 0.92) return ('Uygun fiyat', Tone.good);
+  if (r > 1.08) return ('Pahalı', Tone.warn);
+  return ('Normal fiyat', Tone.neutral);
+}
+
+String _stamp(DateTime at) {
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${two(at.day)}.${two(at.month)} ${two(at.hour)}:${two(at.minute)}';
+}
+
+/// "Mağazalar": the cheapest price up top, then every store with its price,
+/// sortable by price / rating.
 class StoreList extends ConsumerStatefulWidget {
   const StoreList({super.key, required this.query, this.showImage = false});
 
@@ -192,27 +211,10 @@ class _StoreListState extends ConsumerState<StoreList> {
         if (r.offer == null) r,
     ]..sort((a, b) => a.store.toLowerCase().compareTo(b.store.toLowerCase()));
     final at = result?.updatedAt?.toLocal();
-    String two(int n) => n.toString().padLeft(2, '0');
-    final updated = at == null
-        ? null
-        : '${two(at.day)}.${two(at.month)} ${two(at.hour)}:${two(at.minute)}';
-    final palette = context.palette;
-    final theme = Theme.of(context);
-    final muted = theme.textTheme.labelSmall?.copyWith(color: palette.muted);
-    final avg = result?.averagePrice;
-    final cheapest = result == null || result.offers.isEmpty
-        ? null
-        : result.offers.first;
 
     return SectionCard(
       title: 'Mağazalar',
       icon: Icons.storefront_rounded,
-      trailing: avg == null
-          ? null
-          : VerdictChip(
-              'Ort. ${formatPrice(avg, result!.currency)}',
-              tone: Tone.brand,
-            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -224,69 +226,60 @@ class _StoreListState extends ConsumerState<StoreList> {
                 size: 140,
               ),
             ),
-          AppSegmented<StoreSort>(
-            values: StoreSort.values,
-            selected: _sort,
-            labelOf: (s) => s.label,
-            onChanged: (s) => setState(() => _sort = s),
-          ),
-          const SizedBox(height: Space.s),
-          if (cheapest != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Space.xs),
-              child: Text(
-                'En düşük ${formatPrice(cheapest.price, cheapest.currency)} '
-                '(${cheapest.store}) · ${result!.offers.length} teklif',
-                style: theme.textTheme.labelMedium,
-              ),
-            )
-          else if (result?.estimateTry != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: Space.xs),
-              child: Text(
-                'Tahmini piyasa fiyatı ~${formatPrice(result!.estimateTry!, 'TRY')} '
-                '(liste fiyatı × bugünkü kur)',
-                style: theme.textTheme.labelMedium,
-              ),
-            ),
+          if (result != null) _PriceSummary(result: result),
           if (async?.hasError ?? false)
-            Text(
-              async!.error is PriceApiException
+            Notice(
+              title: async!.error is PriceApiException
                   ? (async.error! as PriceApiException).message
                   : 'Fiyatlar alınamadı.',
-              style: TextStyle(color: palette.bad),
-            ),
-          for (final r in priced) _StoreTile(row: r, loading: false),
-          if (loading && priced.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: Space.s),
-              child: Column(children: [SkeletonBar(), SkeletonBar(width: 220)]),
-            ),
-          if (unpriced.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.only(top: Space.s),
-              child: Text(
-                priced.isEmpty
-                    ? 'Bu ürün için otomatik fiyat bulunamadı; mağazada ara:'
-                    : 'Diğer mağazalar (fiyatı otomatik okunamıyor)',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: palette.muted,
-                ),
+              tone: Tone.bad,
+              action: TertiaryButton(
+                label: 'Tekrar dene',
+                icon: Icons.refresh_rounded,
+                onPressed: () =>
+                    ref.invalidate(priceSearchProvider(widget.query)),
               ),
             ),
-            for (final r in unpriced) _StoreTile(row: r, loading: false),
+          if (priced.length > 1) ...[
+            const SizedBox(height: Space.m),
+            AppSegmented<StoreSort>(
+              values: StoreSort.values,
+              selected: _sort,
+              labelOf: (s) => s.label,
+              onChanged: (s) => setState(() => _sort = s),
+            ),
+            const SizedBox(height: Space.s),
           ],
+          for (final r in priced) _StoreTile(row: r),
+          if (loading && priced.isEmpty) const StatView.loading(lines: 3),
+          if (unpriced.isNotEmpty)
+            Theme(
+              data: Theme.of(context)
+                  .copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                tilePadding: EdgeInsets.zero,
+                initiallyExpanded: priced.isEmpty,
+                title: Text(
+                  priced.isEmpty
+                      ? 'Otomatik fiyat bulunamadı, mağazada ara'
+                      : 'Diğer mağazalar (${unpriced.length})',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                subtitle: priced.isEmpty
+                    ? null
+                    : const Text('Fiyatları otomatik okunamıyor'),
+                children: [for (final r in unpriced) _StoreTile(row: r)],
+              ),
+            ),
           const SizedBox(height: Space.xs),
-          Text(
+          Footnote(
             [
-              'Fiyatlar her gün mağazaların botlara açık ürün sayfalarından '
-                  'otomatik okunur; arama sayfaları ve bot koruması olan '
-                  'mağazalar okunmaz.',
-              if (updated != null) 'Son güncelleme: $updated.',
+              'Fiyatlar her gün mağazaların herkese açık ürün sayfalarından '
+                  'okunur. Son fiyat için mağazaya bak.',
+              if (at != null) 'Son güncelleme: ${_stamp(at)}.',
               if (result?.imageSource != null)
                 'Görsel: ${result!.imageSource!.host}',
             ].join(' '),
-            style: muted,
           ),
         ],
       ),
@@ -294,11 +287,72 @@ class _StoreListState extends ConsumerState<StoreList> {
   }
 }
 
+/// Cheapest price in large type, with a "normal / cheap / expensive" label.
+class _PriceSummary extends StatelessWidget {
+  const _PriceSummary({required this.result});
+
+  final PriceSearchResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: context.palette.muted,
+    );
+    final cheapest = result.offers.isEmpty ? null : result.offers.first;
+    if (cheapest == null) {
+      final est = result.estimateTry;
+      if (est == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: Space.s),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Tahmini piyasa fiyatı', style: muted),
+            Text(
+              '~${formatPrice(est, 'TRY')}',
+              style: numberStyle(context, size: 26),
+            ),
+            Text('Liste fiyatı × bugünkü kur', style: muted),
+          ],
+        ),
+      );
+    }
+    final level = priceLevel(cheapest.price, result.estimateTry);
+    final avg = result.averagePrice;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('En düşük fiyat', style: muted),
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: Space.s,
+          runSpacing: Space.xs,
+          children: [
+            Text(
+              formatPrice(cheapest.price, cheapest.currency),
+              style: numberStyle(context, size: 30),
+            ),
+            if (level != null) VerdictChip(level.$1, tone: level.$2),
+          ],
+        ),
+        Text(
+          [
+            cheapest.store,
+            '${result.offers.length} teklif',
+            if (avg != null) 'ortalama ${formatPrice(avg, result.currency)}',
+          ].join(' · '),
+          style: muted,
+        ),
+      ],
+    );
+  }
+}
+
 class _StoreTile extends StatelessWidget {
-  const _StoreTile({required this.row, required this.loading});
+  const _StoreTile({required this.row});
 
   final StoreRow row;
-  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -312,26 +366,32 @@ class _StoreTile extends StatelessWidget {
       if (row.outlier) 'olağan dışı fiyat',
     ];
     return ListTile(
-      dense: true,
       contentPadding: EdgeInsets.zero,
-      leading: Icon(
+      leading: IconTile(
         row.region == 'Global' ? Icons.public_rounded : Icons.store_rounded,
+        size: 40,
         color: o == null ? palette.muted : theme.colorScheme.primary,
       ),
       title: Row(
         children: [
-          Flexible(child: Text(row.store, overflow: TextOverflow.ellipsis)),
+          Flexible(
+            child: Text(
+              row.store,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall,
+            ),
+          ),
           if (o?.rating != null) ...[
             const SizedBox(width: Space.xs),
-            Icon(Icons.star_rounded, size: 14, color: palette.warn),
+            Icon(Icons.star_rounded, size: 16, color: palette.warn),
             Text(
               o!.rating!.toStringAsFixed(1),
-              style: theme.textTheme.labelSmall,
+              style: theme.textTheme.labelMedium,
             ),
             if (o.reviewCount != null)
               Text(
                 ' (${o.reviewCount})',
-                style: theme.textTheme.labelSmall?.copyWith(
+                style: theme.textTheme.labelMedium?.copyWith(
                   color: palette.muted,
                 ),
               ),
@@ -346,9 +406,7 @@ class _StoreTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: row.outlier ? TextStyle(color: palette.warn) : null,
             ),
-      trailing: loading
-          ? const SizedBox(width: 72, child: SkeletonBar(width: 72))
-          : o == null
+      trailing: o == null
           ? Icon(Icons.open_in_new_rounded, size: 18, color: palette.muted)
           : Text(
               formatPrice(o.price, o.currency),

@@ -10,6 +10,7 @@ import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
@@ -122,7 +123,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
             decoration: InputDecoration(
               counterText: '',
               prefixIcon: const Icon(Icons.search_rounded),
-              hintText: 'Model, seri / parça no (MPN) veya barkod',
+              hintText: 'Model, parça kodu ya da barkod',
               suffixIcon: IconButton(
                 tooltip: 'Barkod tara',
                 icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -130,13 +131,13 @@ class _PricesPageState extends ConsumerState<PricesPage> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.cardGap),
           if (_query.isEmpty) ...[
             _RecentSearches(onPick: _setQuery),
             _BuildShortcuts(pcBuild: build, onPick: _setQuery),
           ] else ...[
             if (match != null) _MatchCard(part: match, onClose: _clear),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.cardGap),
             StoreList(query: query, showImage: match == null),
           ],
         ],
@@ -192,15 +193,15 @@ class _BuildShortcuts extends ConsumerWidget {
         ? null
         : ref.watch(mobileCatalogProvider).watch(watchSel.watchId);
     if (pcBuild.parts.isEmpty && phone == null && watch == null) {
-      return const EmptyHint(
+      return const StatView.empty(
         icon: Icons.sell_rounded,
         message:
-            'Bir parça ara ya da kutudaki barkodu tara; mağazalardaki '
-            'fiyatları karşılaştıralım.',
+            'Bir parça ara ya da kutudaki barkodu tara. Mağazalardaki '
+            'fiyatları yan yana gösterelim.',
       );
     }
     return SectionCard(
-      title: 'Cihazların',
+      title: 'Cihazlarının fiyatları',
       icon: Icons.inventory_2_rounded,
       child: Column(
         children: [
@@ -239,7 +240,9 @@ class _BuildShortcuts extends ConsumerWidget {
                 size: 40,
               ),
               title: Text(p.displayName),
-              subtitle: p.mpn == null ? null : Text('MPN: ${p.mpn}'),
+              subtitle: Text(
+                p.mpn == null ? p.category.label : 'Parça kodu: ${p.mpn}',
+              ),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => onPick(p.mpn ?? p.displayName),
             ),
@@ -263,7 +266,12 @@ class _MatchCard extends ConsumerWidget {
       child: Stack(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 44, 16),
+            padding: const EdgeInsets.fromLTRB(
+              Space.l,
+              Space.l,
+              Space.xxl + Space.l,
+              Space.l,
+            ),
             child: _body(context, ref, muted),
           ),
           Positioned(
@@ -289,22 +297,22 @@ class _MatchCard extends ConsumerWidget {
           fallbackIcon: part.category.icon,
           size: 88,
         ),
-        const SizedBox(width: 14),
+        const SizedBox(width: Space.l),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 part.displayName,
-                style: Theme.of(context).textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: Space.xs),
               Text(partSubtitle(part)),
-              if (part.mpn != null) Text('MPN: ${part.mpn}', style: muted),
+              if (part.mpn != null)
+                Text('Parça kodu: ${part.mpn}', style: muted),
               if (part.refPriceUsd != null && part.refPriceUsd! > 0)
                 Text(
-                  'Referans fiyat: ~\$${part.refPriceUsd!.toStringAsFixed(0)}',
+                  'Çıkış fiyatı: ~\$${part.refPriceUsd!.toStringAsFixed(0)}',
                   style: muted,
                 ),
             ],
