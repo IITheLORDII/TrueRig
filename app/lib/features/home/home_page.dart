@@ -368,7 +368,7 @@ class _AdvisorCard extends StatelessWidget {
   }
 }
 
-/// "Analiz yap": scratch area that saves nothing.
+/// "Kaydetmeden dene": scratch area that saves nothing.
 class _TryCard extends StatelessWidget {
   const _TryCard();
 
@@ -395,7 +395,7 @@ class _TryCard extends StatelessWidget {
       ),
     );
     return SectionCard(
-      title: 'Analiz yap',
+      title: 'Kaydetmeden dene',
       icon: Icons.science_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

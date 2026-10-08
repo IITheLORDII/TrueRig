@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/features/compare/compare_metrics.dart';
 import 'package:darbogaz/features/prices/store_list.dart';
@@ -39,7 +40,7 @@ class SideCard extends StatelessWidget {
       color: highlight ? color.withValues(alpha: 0.12) : null,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(Radii.m),
+        borderRadius: BorderRadius.circular(Radii.l),
         side: BorderSide(color: color.withValues(alpha: 0.6)),
       ),
       child: InkWell(
@@ -84,13 +85,16 @@ class SideCard extends StatelessWidget {
                       name,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleSmall,
                     ),
                   ),
                 ],
               ),
               if (onTap != null && !highlight)
-                Text('Değiştir', style: TextStyle(color: color, fontSize: 12)),
+                Text(
+                  'Değiştir',
+                  style: theme.textTheme.labelMedium?.copyWith(color: color),
+                ),
             ],
           ),
         ),
@@ -139,12 +143,7 @@ class VerdictCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            headline,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Text(headline, style: theme.textTheme.titleLarge),
           const SizedBox(height: Space.s),
           ClipRRect(
             borderRadius: BorderRadius.circular(Radii.s),
@@ -195,14 +194,13 @@ class VerdictCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: Space.xs),
             for (final r in highlights)
-              Padding(
-                padding: const EdgeInsets.only(top: Space.xs),
-                child: Text(
-                  '• ${r.label}: ${r.winner == -1 ? mine : other} önde '
-                  '(${r.aDisplay} / ${r.bDisplay})',
-                  style: theme.textTheme.bodySmall,
-                ),
+              BulletRow(
+                '${r.label}: ${r.winner == -1 ? mine : other} önde '
+                '(${r.aDisplay} / ${r.bDisplay})',
+                icon: Icons.check_rounded,
+                color: r.winner == -1 ? mineColor : otherColor,
               ),
           ],
         ],
@@ -311,92 +309,6 @@ class _PriceSide extends ConsumerWidget {
             value,
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// A comparison section with the two device names as column headers.
-class CompareTable extends StatelessWidget {
-  const CompareTable({
-    super.key,
-    required this.section,
-    required this.mine,
-    required this.other,
-  });
-
-  final CompareSection section;
-  final String mine;
-  final String other;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final theme = Theme.of(context);
-    final mineColor = CompareColors.mine(context);
-    final otherColor = CompareColors.other(context);
-
-    Widget header(String text, Color color) => Expanded(
-      flex: 3,
-      child: Text(
-        text,
-        textAlign: TextAlign.end,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-
-    Widget cell(String text, bool wins, Color color) => Expanded(
-      flex: 3,
-      child: Text(
-        text,
-        textAlign: TextAlign.end,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: numberStyle(
-          context,
-          size: 13,
-          color: wins ? color : null,
-        ).copyWith(fontWeight: wins ? FontWeight.w800 : FontWeight.w500),
-      ),
-    );
-
-    return SectionCard(
-      title: section.title,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: Space.xs),
-            child: Row(
-              children: [
-                const Expanded(flex: 4, child: SizedBox.shrink()),
-                header(mine, mineColor),
-                const SizedBox(width: Space.s),
-                header(other, otherColor),
-              ],
-            ),
-          ),
-          Divider(height: 1, color: palette.surfaceAlt),
-          for (final r in section.rows)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: Space.xs),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 4,
-                    child: Text(r.label, style: theme.textTheme.bodySmall),
-                  ),
-                  cell(r.aDisplay, r.winner == -1, mineColor),
-                  const SizedBox(width: Space.s),
-                  cell(r.bDisplay, r.winner == 1, otherColor),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

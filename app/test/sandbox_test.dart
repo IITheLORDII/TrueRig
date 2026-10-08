@@ -7,13 +7,13 @@ import 'support.dart';
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('home has "Analiz yap" between status and features', (
+  testWidgets('home has "Kaydetmeden dene" between status and features', (
     tester,
   ) async {
     await pumpApp(tester);
-    expect(find.text('Analiz yap'), findsOneWidget);
+    expect(find.text('Kaydetmeden dene'), findsOneWidget);
     final status = tester.getTopLeft(find.text('Cihazların')).dy;
-    final quick = tester.getTopLeft(find.text('Analiz yap')).dy;
+    final quick = tester.getTopLeft(find.text('Kaydetmeden dene')).dy;
     final features = tester.getTopLeft(find.textContaining('RENMEK')).dy;
     expect(quick, greaterThan(status));
     expect(quick, lessThan(features));

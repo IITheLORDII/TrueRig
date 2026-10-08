@@ -11,10 +11,13 @@ import 'package:darbogaz/core/saved_devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/builder/prebuilt_picker_page.dart';
 import 'package:darbogaz/features/compare/compare_metrics.dart';
+import 'package:darbogaz/features/compare/compare_table.dart';
 import 'package:darbogaz/features/compare/compare_widgets.dart';
 
 /// Everything needed to draw one comparison.
@@ -41,6 +44,9 @@ class _ComparePageState extends ConsumerState<ComparePage> {
   /// Which saved device is "Benim" per kind (null = the active one).
   final Map<DeviceKind, int> _mine = {};
   PickedSystem? _otherPc;
+
+  /// Hide rows where both sides are equal.
+  bool _onlyDiff = false;
   Phone? _otherPhone;
   Watch? _otherWatch;
 
@@ -140,12 +146,7 @@ class _ComparePageState extends ConsumerState<ComparePage> {
         actions: const [ProfileAction()],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          Space.page,
-          Space.xs,
-          Space.page,
-          Space.xl,
-        ),
+        padding: Insets.page,
         children: [
           AppSegmented<DeviceKind>(
             values: DeviceKind.values,
@@ -165,9 +166,17 @@ class _ComparePageState extends ConsumerState<ComparePage> {
                   onTap: () => _chooseMine(kind),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.only(top: 22),
-                child: Icon(Icons.compare_arrows_rounded),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  Space.xs,
+                  Space.xl,
+                  Space.xs,
+                  0,
+                ),
+                child: Icon(
+                  Icons.compare_arrows_rounded,
+                  color: context.palette.muted,
+                ),
               ),
               Expanded(
                 child: SideCard(
@@ -182,11 +191,17 @@ class _ComparePageState extends ConsumerState<ComparePage> {
           ),
           const SizedBox(height: Space.m),
           if (sections == null)
-            const EmptyHint(
+            StatView.empty(
               icon: Icons.compare_arrows_rounded,
-              message:
-                  'İki cihaz da seçilince kim hangi konuda önde, burada '
-                  'yan yana görünür.',
+              message: c.mine == null
+                  ? 'Önce kendi cihazını ekle, sonra karşılaştıracağın '
+                        'cihazı seç.'
+                  : 'Karşılaştıracağın cihazı seç. Kim hangi konuda önde, '
+                        'burada yan yana görünür.',
+              actionLabel: c.mine == null ? 'Cihaz ekle' : 'Cihaz seç',
+              onAction: c.mine == null
+                  ? () => context.go('/devices?kind=${kind.name}')
+                  : pick,
             )
           else ...[
             VerdictCard(
@@ -203,19 +218,31 @@ class _ComparePageState extends ConsumerState<ComparePage> {
               otherQuery: c.otherQuery,
             ),
             const SizedBox(height: Space.s),
-            for (final s in sections) ...[
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Sadece farkları göster'),
+              value: _onlyDiff,
+              onChanged: (v) => setState(() => _onlyDiff = v),
+            ),
+            for (final s in _visible(sections)) ...[
               CompareTable(section: s, mine: c.mine!, other: c.other!),
               const SizedBox(height: Space.s),
             ],
-            Text(
-              kEstimateDisclaimer,
-              style: Theme.of(context).textTheme.labelSmall
-                  ?.copyWith(color: context.palette.muted),
-            ),
+            const Footnote(kEstimateDisclaimer),
           ],
         ],
       ),
     );
+  }
+
+  List<CompareSection> _visible(List<CompareSection> sections) {
+    if (!_onlyDiff) return sections;
+    return [
+      for (final s in sections)
+        if (s.rows.where((r) => r.winner != 0).toList() case final rows
+            when rows.isNotEmpty)
+          CompareSection(s.title, rows),
+    ];
   }
 
   /// Product name used for the store search ("Casper Excalibur G770").

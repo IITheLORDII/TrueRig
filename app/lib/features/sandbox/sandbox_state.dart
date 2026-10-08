@@ -24,7 +24,7 @@ class SandboxPc {
   }
 }
 
-/// "Analiz yap": two slots (A = main, B = compared) per device kind.
+/// "Kaydetmeden dene": two slots (A = main, B = compared) per device kind.
 /// Lives in memory only — nothing is written to preferences, so it is gone
 /// when the app closes and never touches the user's own devices.
 @immutable

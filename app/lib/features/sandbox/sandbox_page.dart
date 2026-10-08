@@ -9,8 +9,12 @@ import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/features/compare/compare_metrics.dart';
+import 'package:darbogaz/features/compare/compare_table.dart';
 import 'package:darbogaz/features/compare/compare_widgets.dart';
 import 'package:darbogaz/features/performance/mobile_views.dart';
 import 'package:darbogaz/features/performance/phone_views.dart';
@@ -19,7 +23,7 @@ import 'package:darbogaz/features/sandbox/sandbox_state.dart';
 
 enum _View { summary, mobile }
 
-/// "Analiz yap": try models, builds and comparisons without saving anything.
+/// "Kaydetmeden dene": try models, builds and comparisons without saving anything.
 class SandboxPage extends ConsumerStatefulWidget {
   const SandboxPage({super.key, this.initialTab, this.startCompare = false});
 
@@ -89,18 +93,24 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
   Widget build(BuildContext context) {
     final s = ref.watch(sandboxProvider);
     final ctl = ref.read(sandboxProvider.notifier);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         leading: const PageBackButton(),
-        title: const BrandTitle('Analiz yap'),
+        title: const BrandTitle('Kaydetmeden dene'),
         actions: [
           const HomeButton(),
           IconButton(
             tooltip: 'Temizle',
             icon: const Icon(Icons.restart_alt_rounded),
-            onPressed: () {
+            onPressed: () async {
+              final ok = await confirmAction(
+                context,
+                title: 'Her şey temizlensin mi?',
+                message: 'Bu alanda seçtiğin tüm cihazlar silinir.',
+                confirmLabel: 'Temizle',
+              );
+              if (!ok) return;
               ctl.clear();
               setState(() => _editing = null);
             },
@@ -120,12 +130,9 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Hiçbir şey kaydedilmez; uygulama kapanınca silinir. '
+                const Footnote(
+                  'Hiçbir şey kaydedilmez, uygulama kapanınca silinir. '
                   'Cihazlarım etkilenmez.',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: context.palette.muted,
-                  ),
                 ),
                 const SizedBox(height: Space.s),
                 AppSegmented<DeviceKind>(
@@ -135,7 +142,6 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
                   onChanged: ctl.setKind,
                 ),
                 SwitchListTile(
-                  dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: const Text('İki cihazı karşılaştır'),
                   value: s.comparing,
@@ -221,11 +227,7 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
               if (note != null)
                 Padding(
                   padding: const EdgeInsets.only(top: Space.xs),
-                  child: Text(
-                    note,
-                    style: Theme.of(context).textTheme.labelSmall
-                        ?.copyWith(color: context.palette.warn),
-                  ),
+                  child: Notice(title: note, tone: Tone.warn),
                 ),
               if (child != null) ...[
                 const SizedBox(height: Space.s),
@@ -242,9 +244,11 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
         Expanded(
           child:
               child ??
-              const EmptyHint(
+              StatView.empty(
                 icon: Icons.travel_explore_rounded,
                 message: 'Katalogdaki modellerden birini seç ve incele.',
+                actionLabel: hint,
+                onAction: onPick,
               ),
         ),
       ],
@@ -297,9 +301,17 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
                 onTap: pickA,
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(top: 22),
-              child: Icon(Icons.compare_arrows_rounded),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                Space.xs,
+                Space.xl,
+                Space.xs,
+                0,
+              ),
+              child: Icon(
+                Icons.compare_arrows_rounded,
+                color: context.palette.muted,
+              ),
             ),
             Expanded(
               child: SideCard(
@@ -317,15 +329,16 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
           SandboxPcEditor(slot: editing),
           Align(
             alignment: Alignment.centerRight,
-            child: TextButton(
+            child: SecondaryButton(
+              label: 'Tamam',
+              icon: Icons.check_rounded,
               onPressed: () => setState(() => _editing = null),
-              child: const Text('Tamam'),
             ),
           ),
         ],
         const SizedBox(height: Space.m),
         if (sections == null)
-          const EmptyHint(
+          const StatView.empty(
             icon: Icons.compare_arrows_rounded,
             message: 'İki cihazı da seçince farklar burada görünür.',
           )
@@ -376,9 +389,4 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
   }
 }
 
-const _listPadding = EdgeInsets.fromLTRB(
-  Space.page,
-  Space.xs,
-  Space.page,
-  Space.xl,
-);
+const _listPadding = Insets.page;
