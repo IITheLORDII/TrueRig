@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/flow.dart';
+
+import 'package:darbogaz/core/widgets/buttons.dart';
+
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,23 +30,20 @@ class PhonePanel extends ConsumerWidget {
       children: [
         if (showSelf) ...[
           _SelfPhoneCard(match: self),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.cardGap),
         ],
         if (spec == null)
-          EmptyHint(
+          StatView.empty(
             icon: Icons.smartphone_rounded,
             message:
-                'Telefonunu seç; oyun FPS\'i, uygulama performansı ve '
-                'telefonda çalışan yapay zekâ hızını hesaplayalım.',
-            action: FilledButton.icon(
-              onPressed: () => context.push('/pick/phone'),
-              icon: const Icon(Icons.search_rounded),
-              label: const Text('Telefon seç'),
-            ),
+                'Telefonunu seç. Oyunlarda, uygulamalarda ve günlük '
+                'kullanımda ne kadar iyi olduğunu söyleyelim.',
+            actionLabel: 'Telefon seç',
+            onAction: () => context.push('/pick/phone'),
           )
         else ...[
           _SelectedPhoneCard(spec: spec),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.cardGap),
           const PairingCard(),
         ],
       ],
@@ -64,11 +65,11 @@ class _SelfPhoneCard extends ConsumerWidget {
         leading: Icon(Icons.phone_iphone_rounded, color: scheme.primary),
         title: Text('Bu telefon: ${match.phone.displayName}'),
         subtitle: const Text('Modelini otomatik tanıdık'),
-        trailing: FilledButton(
+        trailing: SecondaryButton(
+          label: 'Seç',
           onPressed: () => ref
               .read(phoneSelectionProvider.notifier)
               .select(match.phone, socId: match.socId),
-          child: const Text('Seç'),
         ),
       ),
     );
@@ -168,18 +169,17 @@ class _SelectedPhoneCard extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        ActionRow(
-          secondary: TextButton.icon(
-            onPressed: () => context.push('/pick/phone'),
-            icon: const Icon(Icons.swap_horiz_rounded),
-            label: const Text('Değiştir'),
-          ),
-          primary: FilledButton.icon(
-            onPressed: () => context.go('/analysis'),
-            icon: const Icon(Icons.insights_rounded),
-            label: const Text('Performansı gör'),
-          ),
+        const SizedBox(height: Space.l),
+        PrimaryButton(
+          onPressed: () => context.go('/analysis'),
+          icon: Icons.insights_rounded,
+          label: 'Performansı gör',
+        ),
+        const SizedBox(height: Space.s),
+        TertiaryButton(
+          onPressed: () => context.push('/pick/phone'),
+          icon: Icons.swap_horiz_rounded,
+          label: 'Telefonu değiştir',
         ),
       ],
     );

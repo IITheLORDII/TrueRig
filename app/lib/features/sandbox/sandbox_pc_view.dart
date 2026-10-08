@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/flow.dart';
+
+import 'package:darbogaz/core/widgets/buttons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -74,16 +78,16 @@ class SandboxPcEditor extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FilledButton.tonalIcon(
+          SecondaryButton(
+            expand: true,
             onPressed: () => pickSandboxPrebuilt(context, ref, slot),
-            icon: const Icon(Icons.laptop_chromebook_rounded),
-            label: const Text('Hazır modellerde gez'),
+            icon: Icons.laptop_chromebook_rounded,
+            label: 'Hazır modellerde gez',
           ),
           for (final c in _editable)
             () {
               final part = _partOf(pc.build, c);
               return ListTile(
-                dense: true,
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(c.icon),
                 title: Text(c.label),
@@ -108,10 +112,10 @@ class SandboxPcEditor extends ConsumerWidget {
               );
             }(),
           if (pc.build.parts.isNotEmpty)
-            OutlinedButton.icon(
+            TertiaryButton(
               onPressed: () => context.push('/cart?src=sandbox'),
-              icon: const Icon(Icons.shopping_cart_rounded),
-              label: const Text('Sepeti hazırla: nereden en ucuza?'),
+              icon: Icons.shopping_cart_rounded,
+              label: 'Sepeti hazırla: nereden en ucuza?',
             ),
         ],
       ),
@@ -142,7 +146,7 @@ class _SandboxPcResultsState extends State<SandboxPcResults> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const EmptyHint(
+          const StatView.empty(
             icon: Icons.speed_rounded,
             message:
                 'Darboğaz için işlemci ve ekran kartı seç ya da hazır bir '

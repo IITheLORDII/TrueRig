@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/widgets/buttons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -41,13 +43,14 @@ Future<void> showDetectPrompt(BuildContext context, WidgetRef ref) async {
         actionsAlignment: MainAxisAlignment.center,
         actionsPadding: const EdgeInsets.fromLTRB(Space.l, 0, Space.l, Space.l),
         actions: [
-          TextButton(
+          TertiaryButton(
+            label: 'Şimdi değil',
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Şimdi değil'),
           ),
-          FilledButton(
+          SecondaryButton(
+            label: 'Tanı',
+            icon: Icons.radar_rounded,
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Tanı'),
           ),
         ],
       );

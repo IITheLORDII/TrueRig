@@ -7,7 +7,10 @@ import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 
@@ -45,12 +48,12 @@ class PcPanel extends ConsumerWidget {
       padding: Insets.page,
       children: [
         _PrebuiltCard(selection: prebuilt),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.cardGap),
         _StatusBanner(pcBuild: build, report: report, showPsu: !isLaptop),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.cardGap),
         for (final c in slots) ...[
           _SlotTile(category: c, part: build.partFor(c), report: report),
-          const SizedBox(height: 6),
+          const SizedBox(height: Space.s),
         ],
         if (!isLaptop)
           Card(
@@ -65,7 +68,12 @@ class PcPanel extends ConsumerWidget {
                     ? 'Güç kaynağı, kasa, soğutucu (isteğe bağlı)'
                     : '${othersChosen.length}/3 seçildi',
               ),
-              childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              childrenPadding: const EdgeInsets.fromLTRB(
+                Space.s,
+                0,
+                Space.s,
+                Space.s,
+              ),
               children: [
                 for (final c in _otherSlots) ...[
                   _SlotTile(
@@ -73,37 +81,42 @@ class PcPanel extends ConsumerWidget {
                     part: build.partFor(c),
                     report: report,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: Space.s),
                 ],
               ],
             ),
           ),
-        const SizedBox(height: 12),
-        ActionRow(
-          secondary: build.parts.isEmpty
-              ? null
-              : TextButton.icon(
-                  onPressed: () => ref.read(buildProvider.notifier).reset(),
-                  icon: const Icon(Icons.restart_alt_rounded),
-                  label: const Text('Temizle'),
-                ),
-          primary: build.cpu == null || build.gpu == null
-              ? null
-              : FilledButton.icon(
-                  onPressed: () => context.go('/analysis'),
-                  icon: const Icon(Icons.speed_rounded),
-                  label: const Text('Darboğazı Analiz Et'),
-                ),
-        ),
-        if (build.parts.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: Space.s),
-            child: OutlinedButton.icon(
-              onPressed: () => context.push('/cart'),
-              icon: const Icon(Icons.shopping_cart_rounded),
-              label: const Text('Sepeti hazırla: nereden en ucuza?'),
-            ),
+        const SizedBox(height: Space.l),
+        if (build.cpu != null && build.gpu != null) ...[
+          PrimaryButton(
+            onPressed: () => context.go('/analysis'),
+            icon: Icons.speed_rounded,
+            label: 'Darboğazı analiz et',
           ),
+          const SizedBox(height: Space.s),
+        ],
+        if (build.parts.isNotEmpty) ...[
+          SecondaryButton(
+            expand: true,
+            onPressed: () => context.push('/cart'),
+            icon: Icons.shopping_cart_rounded,
+            label: 'Sepeti hazırla: nereden en ucuza?',
+          ),
+          const SizedBox(height: Space.s),
+          TertiaryButton(
+            label: 'Temizle',
+            icon: Icons.restart_alt_rounded,
+            onPressed: () async {
+              final ok = await confirmAction(
+                context,
+                title: 'Parçalar temizlensin mi?',
+                message: 'Bu bilgisayar için seçtiğin tüm parçalar kaldırılır.',
+                confirmLabel: 'Temizle',
+              );
+              if (ok) ref.read(buildProvider.notifier).reset();
+            },
+          ),
+        ],
       ],
     );
   }
@@ -124,7 +137,6 @@ class _PrebuiltCard extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       color: sel == null ? null : scheme.primary.withValues(alpha: 0.1),
       child: ListTile(
-        dense: true,
         leading: Icon(
           sel?.isLaptop ?? false
               ? Icons.laptop_chromebook_rounded
@@ -172,63 +184,36 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
     final errors = report.bySeverity(IssueSeverity.error).length;
     final warnings = report.bySeverity(IssueSeverity.warning).length;
-    final (color, icon, text) = switch ((
+    final (tone, icon, text) = switch ((
       pcBuild.parts.length,
       errors,
       warnings,
     )) {
       (0, _, _) => (
-        palette.muted,
+        Tone.neutral,
         Icons.touch_app_rounded,
         'Parça seçerek başla. Uyumluluk anında kontrol edilir.',
       ),
       (_, > 0, _) => (
-        palette.bad,
+        Tone.bad,
         Icons.error_rounded,
         '$errors uyumsuzluk var. Analiz sekmesinde ayrıntılar.',
       ),
       (_, _, > 0) => (
-        palette.warn,
+        Tone.warn,
         Icons.warning_amber_rounded,
         'Uyumlu, $warnings uyarı var.',
       ),
-      _ => (
-        palette.good,
-        Icons.check_circle_rounded,
-        'Seçilen parçalar uyumlu.',
-      ),
+      _ => (Tone.good, Icons.check_circle_rounded, 'Seçilen parçalar uyumlu.'),
     };
     final psu = showPsu ? report.recommendedPsuW : null;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(text, style: Theme.of(context).textTheme.bodyMedium),
-                if (psu != null)
-                  Text(
-                    'Önerilen güç kaynağı: $psu W',
-                    style: Theme.of(context).textTheme.labelMedium
-                        ?.copyWith(color: palette.muted),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return Notice(
+      title: text,
+      message: psu == null ? null : 'Önerilen güç kaynağı: $psu W',
+      tone: tone,
+      icon: icon,
     );
   }
 }
@@ -255,14 +240,13 @@ class _SlotTile extends ConsumerWidget {
     return Card(
       shape: hasError
           ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(Radii.l),
               side: BorderSide(color: palette.bad, width: 1.5),
             )
           : null,
       clipBehavior: Clip.antiAlias,
       child: ListTile(
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+        contentPadding: const EdgeInsets.symmetric(horizontal: Space.m),
         leading: PartThumb(
           imageUrl: selected == null
               ? null
@@ -272,12 +256,14 @@ class _SlotTile extends ConsumerWidget {
         title: Text(
           selected?.displayName ?? category.label,
           style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
             color: selected == null ? palette.muted : null,
           ),
         ),
         subtitle: Text(
-          selected == null ? 'Seçmek için dokun' : partSubtitle(selected),
+          selected == null
+              ? 'Seçmek için dokun'
+              : '${hasError ? 'Uyumsuz · ' : ''}${partSubtitle(selected)}',
+          style: hasError ? TextStyle(color: palette.bad) : null,
         ),
         trailing: selected == null
             ? const Icon(Icons.add_rounded)

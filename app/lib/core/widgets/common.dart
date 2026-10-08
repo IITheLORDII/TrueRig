@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:darbogaz/core/widgets/term_info.dart';
-import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 
@@ -256,38 +255,6 @@ class SkeletonBar extends StatelessWidget {
     decoration: BoxDecoration(
       color: context.palette.surfaceAlt,
       borderRadius: BorderRadius.circular(Radii.s),
-    ),
-  );
-}
-
-/// Empty / first-use state. Without an [icon] the TrueRig mark is shown.
-class EmptyHint extends StatelessWidget {
-  const EmptyHint({super.key, this.icon, required this.message, this.action});
-
-  final IconData? icon;
-  final String message;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(Space.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon == null)
-            const Opacity(opacity: 0.8, child: TrueRigMark(size: 56))
-          else
-            Icon(icon, size: IconSizes.xl, color: context.palette.muted),
-          const SizedBox(height: Space.l),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          if (action != null) ...[const SizedBox(height: Space.l), action!],
-        ],
-      ),
     ),
   );
 }

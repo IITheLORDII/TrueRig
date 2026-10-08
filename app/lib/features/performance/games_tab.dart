@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/flow.dart';
+
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/verdicts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,7 +44,7 @@ class GamesTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final results = ref.watch(_allGamesProvider);
     if (results == null) {
-      return const EmptyHint(
+      return const StatView.empty(
         icon: Icons.videogame_asset_off_rounded,
         message: 'Oyun FPS tahmini için bir ekran kartı da seç.',
       );

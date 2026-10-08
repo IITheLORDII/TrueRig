@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:darbogaz/core/widgets/flow.dart';
+
+import 'package:darbogaz/core/widgets/buttons.dart';
+
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +12,6 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
-import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/picker.dart';
 import 'package:darbogaz/features/watch/pairing_card.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -21,16 +24,13 @@ class WatchPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final report = ref.watch(watchReportProvider);
     if (report == null) {
-      return EmptyHint(
+      return StatView.empty(
         icon: Icons.watch_rounded,
         message:
-            'Akıllı saatini seç; telefonunla uyumunu, pil ömrünü ve '
+            'Akıllı saatini seç. Telefonunla uyumunu, pil ömrünü ve '
             'özelliklerini gösterelim.',
-        action: FilledButton.icon(
-          onPressed: () => context.push('/pick/watch'),
-          icon: const Icon(Icons.search_rounded),
-          label: const Text('Saat seç'),
-        ),
+        actionLabel: 'Saat seç',
+        onAction: () => context.push('/pick/watch'),
       );
     }
     final w = report.watch;
@@ -61,7 +61,7 @@ class WatchPanel extends ConsumerWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.cardGap),
         PairingCard(
           onChangePhone: () async {
             final picked = await context.push<Phone>('/pick/phone?mode=pair');
@@ -79,18 +79,17 @@ class WatchPanel extends ConsumerWidget {
               style: theme.textTheme.labelSmall?.copyWith(color: palette.muted),
             ),
           ),
-        const SizedBox(height: 12),
-        ActionRow(
-          secondary: TextButton.icon(
-            onPressed: () => context.push('/pick/watch'),
-            icon: const Icon(Icons.swap_horiz_rounded),
-            label: const Text('Değiştir'),
-          ),
-          primary: FilledButton.icon(
-            onPressed: () => context.go('/analysis'),
-            icon: const Icon(Icons.insights_rounded),
-            label: const Text('Ayrıntılar'),
-          ),
+        const SizedBox(height: Space.l),
+        PrimaryButton(
+          onPressed: () => context.go('/analysis'),
+          icon: Icons.insights_rounded,
+          label: 'Ayrıntılar',
+        ),
+        const SizedBox(height: Space.s),
+        TertiaryButton(
+          onPressed: () => context.push('/pick/watch'),
+          icon: Icons.swap_horiz_rounded,
+          label: 'Saati değiştir',
         ),
       ],
     );

@@ -68,12 +68,7 @@ class _DevicesPageState extends ConsumerState<DevicesPage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.page,
-              0,
-              Space.page,
-              Space.s,
-            ),
+            padding: Insets.pageHeader,
             child: AppSegmented<DeviceKind>(
               values: DeviceKind.values,
               selected: kind,
@@ -82,12 +77,7 @@ class _DevicesPageState extends ConsumerState<DevicesPage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(
-              Space.page,
-              0,
-              Space.page,
-              Space.s,
-            ),
+            padding: Insets.pageHeader,
             child: DeviceSlotBar(kind: kind),
           ),
           Expanded(
