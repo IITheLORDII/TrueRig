@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:perf_engine/perf_engine.dart';
 
-import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
-import 'package:darbogaz/features/prices/store_list.dart';
 
 /// A part of the build with the store offers found for it.
 @immutable
@@ -137,25 +135,3 @@ Uri? amazonCartUrl(
 
 /// Amazon product codes for catalog parts (filled in as they are verified).
 const Map<String, String> kAmazonAsins = {};
-
-/// Plain-text parts list to send to a store that assembles PCs.
-String shareText(List<PartOffers> parts, CartPlan plan, {String? title}) {
-  final lines = <String>[title ?? 'TrueRig sistem listesi'];
-  final chosen = {
-    for (final b in plan.baskets)
-      for (final i in b.items) i.part.id: i.offer,
-  };
-  for (final p in parts) {
-    final o = chosen[p.part.id];
-    final mpn = p.part.mpn;
-    lines.add(
-      '• ${p.part.category.label}: ${p.part.displayName}'
-      '${mpn != null && mpn.isNotEmpty ? ' (MPN: $mpn)' : ''}'
-      '${o == null ? '' : ' · ${formatPrice(o.price, o.currency)} ${o.store} ${o.url}'}',
-    );
-  }
-  if (plan.total > 0) {
-    lines.add('Toplam: ~${formatPrice(plan.total, 'TRY')}');
-  }
-  return lines.join('\n');
-}

@@ -254,7 +254,11 @@ bool isSolderedCpu(Cpu c) =>
     c.socket.startsWith('FL');
 
 /// Laptop GPUs are modelled with length 0 (built into the chassis).
-bool isLaptopGpu(Gpu g) => g.lengthMm == 0;
+/// Integrated graphics ('-igpu') are not: desktop APUs have them too.
+bool isLaptopGpu(Gpu g) => g.lengthMm == 0 && !isIntegratedGpu(g);
+
+/// Graphics built into the processor (no graphics card).
+bool isIntegratedGpu(Gpu g) => g.id.endsWith('-igpu');
 
 /// A laptop build: soldered processor or built-in laptop graphics.
 bool isLaptopBuild(Cpu? cpu, Gpu? gpu) =>

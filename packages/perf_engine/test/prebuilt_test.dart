@@ -20,7 +20,8 @@ void main() {
           expect(catalog.byId(v.ramId), isA<Ram>(),
               reason: '${s.id} ${v.ramId}');
           if (s.isLaptop) {
-            expect(isLaptopGpu(gpu! as Gpu), isTrue,
+            expect(
+                isLaptopGpu(gpu! as Gpu) || isIntegratedGpu(gpu as Gpu), isTrue,
                 reason: '${s.id} ${v.gpuId}');
           }
         }

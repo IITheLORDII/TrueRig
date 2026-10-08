@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 
 import { type FetchDeps, PoliteFetcher } from "../../../supabase/functions/price-search/public/polite_fetch.ts";
+import { decodeEntities } from "../../../supabase/functions/price-search/public/jsonld.ts";
 import { buildIndex, offerFrom, parseUsdTry, plausible } from "../indexer.ts";
 import { type IndexStore, parseSitemap } from "../sitemap.ts";
-import { bestUrls, matchScore, type PriceItem } from "../slug_match.ts";
+import { bestUrls, matchScore, type PriceItem, SlugIndex } from "../slug_match.ts";
 
 const gpu: PriceItem = { key: "gpu:rtx-4060", kind: "gpu", brand: "NVIDIA", model: "GeForce RTX 4060", name: "NVIDIA GeForce RTX 4060" };
 const iphone: PriceItem = { key: "phone:iphone-15", kind: "phone", brand: "Apple", model: "iPhone 15", name: "Apple iPhone 15" };
@@ -147,5 +148,78 @@ describe("guards from the first live run", () => {
     assert.equal(plausible(offer(30000), cpu, 49), true);
     assert.equal(plausible(offer(2499), cpu, 49), false);
     assert.equal(plausible(offer(2499), { ...cpu, ref_usd: undefined }, 49), true);
+  });
+});
+
+describe("SlugIndex", () => {
+  test("gives the same best URLs as a full scan", () => {
+    const urls = [
+      "https://s.com/msi-geforce-rtx-4060-ventus-2x-ekran-karti.html",
+      "https://s.com/asus-rtx-4060.html",
+      "https://s.com/rtx-4060-ti.html",
+      "https://s.com/apple-iphone-15-128gb.html",
+      "https://s.com/asus-tuf-fx507zc4-i5.html",
+      "https://s.com/bebek-arabasi.html",
+    ];
+    const idx = new SlugIndex(urls);
+    for (const item of [gpu, iphone, tuf]) {
+      assert.deepEqual(idx.best(item, 2), bestUrls(item, urls, 2), item.key);
+    }
+    // Only URLs sharing a word are scored.
+    assert.ok(idx.candidates(iphone).length < urls.length);
+  });
+});
+
+describe("live run fixes", () => {
+  const r5: PriceItem = { key: "cpu:r5-7600", kind: "cpu", brand: "AMD", model: "Ryzen 5 7600", name: "AMD Ryzen 5 7600" };
+  const i5: PriceItem = { key: "cpu:i5-12400", kind: "cpu", brand: "Intel", model: "Core i5-12400", name: "Intel Core i5-12400" };
+  const r5x: PriceItem = { key: "cpu:r5-7600x", kind: "cpu", brand: "AMD", model: "Ryzen 5 7600X", name: "AMD Ryzen 5 7600X" };
+
+  test("7600 is not 7600X, but 7600X still matches itself", () => {
+    assert.equal(matchScore(r5, "AMD Ryzen 5 7600X Soket AM5 4.7GHz Tray İşlemci"), null);
+    assert.notEqual(matchScore(r5, "AMD Ryzen 5 7600 Tray 5.1GHz 6 Çekirdek"), null);
+    assert.notEqual(matchScore(r5x, "AMD Ryzen 5 7600X Soket AM5 4.7GHz Tray İşlemci"), null);
+  });
+
+  test("Intel F is the same chip", () => {
+    assert.notEqual(matchScore(i5, "Intel Core i5 12400F Soket 1700 12. Nesil"), null);
+  });
+
+  test("a laptop listing is not a processor", () => {
+    const u: PriceItem = { key: "cpu:i5-12500h", kind: "cpu", brand: "Intel", model: "Core i5-12500H", name: "Intel Core i5-12500H" };
+    assert.equal(matchScore(u, "Acer EX215 i5-12500H 16GB 512GB SSD 15.6 FHD Dos"), null);
+  });
+
+  test("HTML entities in titles are decoded", () => {
+    assert.equal(decodeEntities("AMD Ryzen&#x2122; 7 &#xD6;nbellek &amp; &#252;"), "AMD Ryzen™ 7 Önbellek & ü");
+  });
+});
+
+describe("previous offers", () => {
+  test("old offers that no longer match are dropped", async () => {
+    const r5: PriceItem = { key: "cpu:r5-7600", kind: "cpu", brand: "AMD", model: "Ryzen 5 7600", name: "AMD Ryzen 5 7600" };
+    const offer = (title: string) => ({
+      store: "Vatan", price: 9999, currency: "TRY", url: "https://x", in_stock: true,
+      rating: null, review_count: null, title, fetched_at: "2026-10-08T00:00:00Z",
+    });
+    const deps: FetchDeps = {
+      fetch: (async () => new Response("", { status: 404 })) as typeof fetch,
+      now: () => 0, sleep: async () => {}, takeBudget: async () => true, userAgent: "TrueRigBot/1.0",
+    };
+    const index = await buildIndex({
+      items: [r5], stores: [], fetcher: new PoliteFetcher(deps),
+      previous: {
+        version: 1, generated_at: "", usd_try: null, stores: [],
+        items: {
+          "cpu:r5-7600": {
+            name: r5.name, kind: "cpu", checked: {},
+            offers: [offer("AMD Ryzen 5 7600X Tray"), offer("AMD Ryzen 5 7600 Tray")],
+          },
+        },
+      },
+      now: () => new Date("2026-10-08T01:00:00Z"),
+      requestsPerStore: 0,
+    });
+    assert.deepEqual(index.items["cpu:r5-7600"].offers.map((o) => o.title), ["AMD Ryzen 5 7600 Tray"]);
   });
 });

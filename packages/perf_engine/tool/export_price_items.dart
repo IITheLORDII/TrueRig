@@ -28,15 +28,17 @@ void main() {
   final parts = PartCatalog.seed();
   final mobile = MobileCatalog.seed();
   final items = [
+    // Laptop processors are soldered and never sold on their own.
     for (final c in parts.cpus)
-      _item(
-        'cpu:${c.id}',
-        'cpu',
-        c.brand,
-        c.model,
-        mpn: c.mpn,
-        refUsd: c.refPriceUsd,
-      ),
+      if (!isSolderedCpu(c))
+        _item(
+          'cpu:${c.id}',
+          'cpu',
+          c.brand,
+          c.model,
+          mpn: c.mpn,
+          refUsd: c.refPriceUsd,
+        ),
     // Laptop and integrated GPUs are not sold on their own.
     for (final g in parts.gpus)
       if (g.lengthMm > 0)

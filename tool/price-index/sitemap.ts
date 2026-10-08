@@ -23,10 +23,15 @@ export interface IndexStore {
   productFilter: RegExp;
   /** Extra spacing for hosts that asked us to slow down before. */
   minDelayMs?: number;
+  /** Child sitemaps read per run (large marketplaces). */
+  maxChildSitemaps?: number;
 }
 
-// Only stores whose robots.txt allows product pages and that publish
-// sitemaps (checked 2026-10). Search-only stores are not crawled.
+// Only stores whose robots.txt allows product pages, that publish
+// sitemaps and put a schema.org price on product pages (surveyed 2026-10).
+// Not crawlable: Hepsiburada, n11, Teknosa (robots.txt 403), Akakçe, Cimri,
+// Epey (bot protection), İncehesap, Sinerji (sitemap 403), Trendyol,
+// Amazon (no public sitemap, search closed to bots).
 export const INDEX_STORES: IndexStore[] = [
   {
     name: "İtopya",
@@ -41,6 +46,33 @@ export const INDEX_STORES: IndexStore[] = [
     sitemaps: ["https://www.vatanbilgisayar.com/sitemap.axd"],
     productFilter: /\.html$/,
     minDelayMs: 5000,
+  },
+  {
+    name: "Gaming.gen.tr",
+    origin: "https://www.gaming.gen.tr",
+    sitemaps: ["https://www.gaming.gen.tr/sitemap.xml"],
+    productFilter: /\/urun\/\d+\//,
+    maxChildSitemaps: 60,
+  },
+  {
+    name: "Monster Notebook",
+    origin: "https://www.monsternotebook.com.tr",
+    sitemaps: ["https://www.monsternotebook.com.tr/sitemap.xml"],
+    productFilter: /^https:\/\/www\.monsternotebook\.com\.tr\/[a-z0-9-]+\/[a-z0-9-]+\/$/,
+  },
+  {
+    name: "Troyestore",
+    origin: "https://www.troyestore.com",
+    sitemaps: ["https://www.troyestore.com/sitemap.xml"],
+    productFilter: /_\d+$/,
+  },
+  {
+    name: "Pazarama",
+    origin: "https://www.pazarama.com",
+    sitemaps: ["https://www.pazarama.com/sitemaps/sitemap.xml"],
+    childFilter: /urunler/,
+    productFilter: /-p-[a-z0-9]+$/i,
+    maxChildSitemaps: 30,
   },
   {
     name: "MediaMarkt",

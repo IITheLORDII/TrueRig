@@ -6,7 +6,7 @@
 import { extractPageData } from "../../supabase/functions/price-search/public/jsonld.ts";
 import type { PoliteFetcher } from "../../supabase/functions/price-search/public/polite_fetch.ts";
 import { type IndexStore, parseSitemap } from "./sitemap.ts";
-import { bestUrls, matchScore, type PriceItem } from "./slug_match.ts";
+import { matchScore, type PriceItem, SlugIndex } from "./slug_match.ts";
 
 export interface IndexOffer {
   store: string;
@@ -87,7 +87,8 @@ export async function buildIndex(o: BuildOptions): Promise<PriceIndex> {
   };
 }
 
-/** Current catalog items, keeping earlier offers and check times. */
+/** Current catalog items, keeping earlier offers that still match and
+ * check times. */
 function mergeItems(
   items: PriceItem[],
   previous: Record<string, IndexEntry>,
@@ -100,7 +101,8 @@ function mergeItems(
       kind: it.kind,
       ...(it.mpn ? { mpn: it.mpn } : {}),
       ...(it.ref_usd ? { ref_usd: it.ref_usd } : {}),
-      offers: prev?.offers ? [...prev.offers] : [],
+      // Re-check old offers with today's rules (matching gets stricter).
+      offers: (prev?.offers ?? []).filter((x) => !x.title || matchScore(it, x.title) !== null),
       checked: { ...(prev?.checked ?? {}) },
     };
   }
@@ -114,12 +116,13 @@ async function crawlStore(
   usdTryRate: number | null,
   log: (msg: string) => void,
 ): Promise<StoreStatus> {
-  const urls = await productUrls(store, o.fetcher, o.maxChildSitemaps ?? 40);
+  const urls = await productUrls(store, o.fetcher, store.maxChildSitemaps ?? o.maxChildSitemaps ?? 40);
   if (typeof urls === "string") {
     log(`${store.name}: sitemap unavailable (${urls})`);
     return { name: store.name, status: "unavailable", reason: urls, product_urls: 0, requests: 0 };
   }
   log(`${store.name}: ${urls.length} product URLs`);
+  const slugs = new SlugIndex(urls);
 
   // Least recently checked first, so every run moves the whole list along.
   const order = [...o.items].sort((a, b) =>
@@ -129,7 +132,7 @@ async function crawlStore(
   for (const item of order) {
     if (requests >= o.requestsPerStore) break;
     const entry = entries[item.key];
-    const candidates = bestUrls(item, urls, o.urlsPerItem ?? 2);
+    const candidates = slugs.best(item, o.urlsPerItem ?? 2);
     let best: IndexOffer | null = null;
     for (const url of candidates) {
       if (requests >= o.requestsPerStore) break;
@@ -195,21 +198,29 @@ async function productUrls(
 ): Promise<string[] | string> {
   const out = new Set<string>();
   let lastError = "no sitemap";
-  for (const root of store.sitemaps) {
-    const res = await fetcher.get(root);
+  // Breadth-first through sitemap indexes (marketplaces nest them), reading
+  // at most `maxChildren` files after the roots.
+  const queue = [...store.sitemaps];
+  const seen = new Set<string>();
+  let reads = 0;
+  while (queue.length > 0 && reads <= maxChildren + store.sitemaps.length) {
+    const url = queue.shift()!;
+    if (seen.has(url)) continue;
+    seen.add(url);
+    reads++;
+    const res = await fetcher.get(url);
     if (res.kind !== "ok") {
       lastError = res.kind === "http-error" ? `http ${res.status}` : res.kind;
+      if (res.kind === "backing-off" || res.kind === "blocked-by-robots") break;
       continue;
     }
     const map = parseSitemap(res.html);
-    const pages = map.isIndex
-      ? map.locs.filter((u) => !store.childFilter || store.childFilter.test(u)).slice(0, maxChildren)
-      : [];
-    if (!map.isIndex) addProducts(map.locs, store, out);
-    for (const child of pages) {
-      const c = await fetcher.get(child);
-      if (c.kind === "ok") addProducts(parseSitemap(c.html).locs, store, out);
-      else if (c.kind === "backing-off") break;
+    if (map.isIndex) {
+      const isRoot = store.sitemaps.includes(url);
+      const kids = map.locs.filter((u) => !isRoot || !store.childFilter || store.childFilter.test(u));
+      queue.push(...kids);
+    } else {
+      addProducts(map.locs, store, out);
     }
   }
   return out.size > 0 ? [...out] : lastError;

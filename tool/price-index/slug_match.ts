@@ -22,6 +22,9 @@ export interface PriceItem {
 /** Words that change the product tier when they are not asked for. */
 const TIER_WORDS = new Set(["ti", "super", "xt", "xtx", "x3d", "pro", "max", "plus", "ultra", "mini", "lite", "fe"]);
 
+/** Suffixes that name the same chip (Intel F = graphics disabled). */
+const SAME_CHIP_SUFFIX = new Set(["f"]);
+
 const TIER_SUFFIX = new Set(["ti", "super", "xt", "xtx", "x3d", "s"]);
 
 /** Vendor words that stores often leave out of slugs. */
@@ -34,8 +37,15 @@ const ACCESSORY = [
 ];
 
 const KIND_REJECT: Record<ItemKind, string[]> = {
-  cpu: ["laptop", "notebook", "dizustu", "bilgisayar", "anakart", "sogutucu", "fan", "rtx", "gtx", "rx", "ekran"],
-  gpu: ["laptop", "notebook", "dizustu", "bilgisayar", "monitor", "i3", "i5", "i7", "i9", "ryzen", "tablet"],
+  cpu: [
+    "laptop", "notebook", "dizustu", "bilgisayar", "anakart", "sogutucu", "fan", "rtx", "gtx", "rx", "ekran",
+    // Whole systems: "Acer ... i7-1255U 16GB 512GB SSD 15.6 FHD Dos".
+    "ssd", "fhd", "inc", "windows", "dos", "gb",
+  ],
+  gpu: [
+    "laptop", "notebook", "dizustu", "bilgisayar", "monitor", "i3", "i5", "i7", "i9", "ryzen", "tablet",
+    "ssd", "fhd", "inc", "windows", "dos",
+  ],
   laptop: ACCESSORY,
   desktop: ACCESSORY,
   phone: [...ACCESSORY, "saat", "watch", "tablet", "kulaklik"],
@@ -100,9 +110,23 @@ export function matchScore(item: PriceItem, text: string): number | null {
     toks.has(t) ||
     (t.length >= 4 && /[a-z]/.test(t) && /[0-9]/.test(t) && [...toks].some((x) => grows(x, t)));
 
+  // A model number written with an extra letter is another model:
+  // "7600" -> "7600x", "5600" -> "5600x"/"5600g". Intel's F (no graphics,
+  // same chip) is accepted: "12400" -> "12400f".
+  const otherModel = (alt: string[]) =>
+    alt.some((t) =>
+      /^[0-9]{3,}$/.test(t) &&
+      [...toks].some((x) => {
+        if (!x.startsWith(t) || x === t) return false;
+        const rest = x.slice(t.length);
+        return /^[a-z]+$/.test(rest) && !SAME_CHIP_SUFFIX.has(rest) && !alt.includes(rest);
+      })
+    );
+
   let best: number | null = null;
   for (const alt of alternatives(item)) {
     if (!alt.every(has)) continue;
+    if (otherModel(alt)) continue;
     const asked = new Set(alt);
     const extraTier = [...toks].some((t) => TIER_WORDS.has(t) && !asked.has(t));
     if (extraTier) continue;
@@ -121,4 +145,54 @@ export function bestUrls(item: PriceItem, urls: string[], limit: number): string
   }
   scored.sort((a, b) => a[0] - b[0] || a[1].length - b[1].length);
   return scored.slice(0, limit).map(([, u]) => u);
+}
+
+/**
+ * Token -> URLs lookup over a store's product URLs, so each catalog item
+ * only scores the URLs that contain one of its words instead of every URL
+ * (Pazarama alone lists over a million).
+ */
+export class SlugIndex {
+  private readonly postings = new Map<string, number[]>();
+  private readonly texts: string[];
+  readonly urls: string[];
+
+  constructor(urls: string[]) {
+    this.urls = urls;
+    this.texts = urls.map(slugText);
+    this.texts.forEach((t, i) => {
+      for (const tok of tokensOf(t)) {
+        let list = this.postings.get(tok);
+        if (!list) this.postings.set(tok, (list = []));
+        list.push(i);
+      }
+    });
+  }
+
+  /** URLs worth scoring: those containing the rarest exact word of an
+   * alternative. Model codes that may grow ("fx507" -> "fx507zc4") are
+   * skipped as anchors; with no usable anchor every URL is a candidate. */
+  candidates(item: PriceItem): number[] {
+    const out = new Set<number>();
+    for (const alt of alternatives(item)) {
+      const anchors = alt
+        .filter((t) => !(/[a-z]/.test(t) && /[0-9]/.test(t)))
+        .map((t) => this.postings.get(t) ?? []);
+      if (anchors.length === 0) return this.urls.map((_, i) => i);
+      const rarest = anchors.reduce((a, b) => (a.length <= b.length ? a : b));
+      for (const i of rarest) out.add(i);
+    }
+    return [...out];
+  }
+
+  /** Same result as [bestUrls] over all URLs, much faster. */
+  best(item: PriceItem, limit: number): string[] {
+    const scored: [number, string][] = [];
+    for (const i of this.candidates(item)) {
+      const s = matchScore(item, this.texts[i]);
+      if (s !== null) scored.push([s, this.urls[i]]);
+    }
+    scored.sort((a, b) => a[0] - b[0] || a[1].length - b[1].length);
+    return scored.slice(0, limit).map(([, u]) => u);
+  }
 }

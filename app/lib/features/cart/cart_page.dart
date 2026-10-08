@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -70,7 +69,7 @@ class _CartPageState extends ConsumerState<CartPage> {
 
     // A laptop's processor and graphics are not sold on their own: price the
     // system itself.
-    if (gpu != null && isLaptopGpu(gpu)) {
+    if (isLaptopBuild(build.cpu, gpu)) {
       final system = (label ?? '').split(' · ').first;
       return Scaffold(
         appBar: AppBar(title: const BrandTitle('Sepeti hazırla')),
@@ -90,7 +89,7 @@ class _CartPageState extends ConsumerState<CartPage> {
             const SizedBox(height: Space.s),
             StoreList(
               query: system.isEmpty
-                  ? '${build.cpu?.model ?? ''} ${gpu.model}'.trim()
+                  ? '${build.cpu?.model ?? ''} ${gpu?.model ?? ''}'.trim()
                   : system,
               showImage: true,
             ),
@@ -188,8 +187,6 @@ class _CartPageState extends ConsumerState<CartPage> {
           ),
           const SizedBox(height: Space.s),
         ],
-        _ShareCard(text: shareText(parts, plan)),
-        const SizedBox(height: Space.s),
         Text(
           'Mağazalar dışarıdan sepete ekleme izni vermediği için ürün '
           'sayfaları açılır; sepete eklemeyi orada tek dokunuşla yaparsın. '
@@ -363,62 +360,6 @@ class _MissingCard extends StatelessWidget {
                 '/prices?q=${Uri.encodeQueryComponent(p.part.mpn ?? p.part.displayName)}',
               ),
             ),
-        ],
-      ),
-    );
-  }
-}
-
-/// For stores that assemble PCs: send them the list.
-class _ShareCard extends StatelessWidget {
-  const _ShareCard({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return SectionCard(
-      title: 'Toplatmak için gönder',
-      icon: Icons.build_circle_rounded,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Sistem toplayan bir mağazaya parça listesini gönder; '
-            'birleştirip kurulu teslim etsinler.',
-            style: theme.textTheme.bodySmall,
-          ),
-          const SizedBox(height: Space.s),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: text));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Liste kopyalandı.')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.copy_rounded),
-                  label: const Text('Kopyala'),
-                ),
-              ),
-              const SizedBox(width: Space.s),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => openStoreUrl(
-                    context,
-                    Uri.https('wa.me', '/', {'text': text}),
-                  ),
-                  icon: const Icon(Icons.send_rounded),
-                  label: const Text('WhatsApp'),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

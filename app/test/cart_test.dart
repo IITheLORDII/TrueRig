@@ -76,13 +76,6 @@ void main() {
       expect(url.queryParameters['Quantity.1'], '1');
       expect(amazonCartUrl(const []), isNull);
     });
-
-    test('share text names parts, MPNs, stores and the total', () {
-      final text = shareText(parts, cheapestMix(parts));
-      expect(text, contains(cpu.displayName));
-      expect(text, contains('İtopya'));
-      expect(text, contains('Toplam'));
-    });
   });
 
   testWidgets('Bilgisayarım → Sepeti hazırla shows store baskets', (
@@ -109,7 +102,8 @@ void main() {
     expect(find.text('İtopya'), findsWidgets);
     expect(find.text('Vatan'), findsWidgets);
     expect(find.text('Tek mağazadan'), findsOneWidget);
-    expect(find.text('Toplatmak için gönder'), findsOneWidget);
+    expect(find.text('Toplatmak için gönder'), findsNothing);
+    expect(find.text('WhatsApp'), findsNothing);
 
     await tapText(tester, 'Tek mağazadan');
     expect(find.textContaining('İtopya\'da 2 ürünü aç'), findsOneWidget);

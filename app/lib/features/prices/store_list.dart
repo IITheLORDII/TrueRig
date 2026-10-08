@@ -12,13 +12,32 @@ import 'package:darbogaz/core/widgets/part_thumb.dart';
 import 'package:darbogaz/features/prices/price_index.dart';
 import 'package:darbogaz/features/prices/price_repository.dart';
 
+/// The published daily price index (also the source of the USD/TRY rate).
+final priceIndexProvider = Provider<IndexPriceRepository>(
+  (ref) => IndexPriceRepository(),
+);
+
 /// Daily published index (always on) plus the live service when deployed.
 final priceRepositoryProvider = Provider<PriceRepository>(
   (ref) => CombinedPriceRepository([
-    IndexPriceRepository(),
+    ref.watch(priceIndexProvider),
     RemotePriceRepository(),
   ]),
 );
+
+/// Used when the price index cannot be read (offline, not published yet).
+const double kFallbackUsdTry = 41;
+
+/// Today's USD/TRY selling rate from the price index, or the fallback.
+final usdTryProvider = FutureProvider<double>((ref) async {
+  try {
+    final data = await ref.watch(priceIndexProvider).load();
+    return data.usdTry ?? kFallbackUsdTry;
+  } on Object catch (e) {
+    debugPrint('Kur alınamadı, tahmini kur kullanılıyor: $e');
+    return kFallbackUsdTry;
+  }
+});
 
 /// Live search; an MPN-matched image is remembered for the whole session so
 /// the part shows its picture everywhere in the app.

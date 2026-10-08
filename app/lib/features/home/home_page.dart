@@ -44,6 +44,8 @@ class HomePage extends ConsumerWidget {
           const _SelfPhoneBanner(),
           const _StatusCard(),
           const SizedBox(height: Space.s),
+          const _AdvisorCard(),
+          const SizedBox(height: Space.s),
           const _TryCard(),
           const SectionHeader('Ne öğrenmek istersin?'),
           const _Questions(),
@@ -308,6 +310,57 @@ class _QuestionCard extends StatelessWidget {
                 const Icon(Icons.chevron_right_rounded),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// "Bilgisayarı ne için alıyorsun?": a few questions, then systems that
+/// fit the job (not the looks or the price tag).
+class _AdvisorCard extends StatelessWidget {
+  const _AdvisorCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      color: theme.colorScheme.primary.withValues(alpha: 0.12),
+      child: InkWell(
+        onTap: () => context.push('/advisor'),
+        child: Padding(
+          padding: const EdgeInsets.all(Space.l),
+          child: Row(
+            children: [
+              Icon(
+                Icons.lightbulb_rounded,
+                size: 36,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: Space.m),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Bilgisayarı ne için alıyorsun?',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Birkaç kısa soru; işine gerçekten yetecek bilgisayarı '
+                      'önerelim, yanlış alımdan kurtul.',
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
           ),
         ),
       ),

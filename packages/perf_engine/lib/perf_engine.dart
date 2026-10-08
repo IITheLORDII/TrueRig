@@ -1,6 +1,7 @@
 /// Offline PC compatibility, bottleneck and performance estimation engine.
 library;
 
+export 'src/advisor/purchase_advisor.dart';
 export 'src/advisor/upgrade_advisor.dart';
 export 'src/app_perf/app_estimator.dart';
 export 'src/bottleneck/system_bottleneck.dart';

@@ -191,10 +191,27 @@ const asArray = (v: unknown): unknown[] =>
   v === undefined || v === null ? [] : Array.isArray(v) ? v : [v];
 const str = (v: unknown): string | null =>
   typeof v === "string" && v.trim() !== ""
-    ? v.trim()
+    ? decodeEntities(v).trim()
     : typeof v === "number"
     ? String(v)
     : null;
+
+const NAMED: Record<string, string> = {
+  amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " ",
+};
+
+/** Some stores HTML-escape JSON-LD strings: "Ryzen&#x2122;" -> "Ryzen™". */
+export function decodeEntities(s: string): string {
+  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, code: string) => {
+    if (code[0] === "#") {
+      const n = code[1] === "x" || code[1] === "X"
+        ? parseInt(code.slice(2), 16)
+        : parseInt(code.slice(1), 10);
+      return Number.isFinite(n) && n > 0 && n < 0x110000 ? String.fromCodePoint(n) : m;
+    }
+    return NAMED[code.toLowerCase()] ?? m;
+  });
+}
 
 /** Accepts 12999.90, "12999.90", "12.999,90" (TR format). */
 export function num(v: unknown): number | null {
