@@ -7,7 +7,7 @@ import 'package:darbogaz/features/device/add_device_sheet.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
-import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/device_chip.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/analysis/analysis_page.dart';
@@ -178,13 +178,10 @@ class _ChooseFirst extends ConsumerWidget {
   final String message;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => EmptyHint(
+  Widget build(BuildContext context, WidgetRef ref) => StatView.empty(
     icon: icon,
     message: message,
-    action: FilledButton.icon(
-      onPressed: () => showAddDeviceSheet(context, ref, kind),
-      icon: const Icon(Icons.add_rounded),
-      label: Text('${kind.label} ekle'),
-    ),
+    actionLabel: '${kind.label} ekle',
+    onAction: () => showAddDeviceSheet(context, ref, kind),
   );
 }

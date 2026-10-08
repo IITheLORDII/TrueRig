@@ -15,6 +15,7 @@ import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/bottleneck_gauge.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/score_scale.dart';
 import 'package:darbogaz/features/analysis/compatibility_card.dart';
 import 'package:darbogaz/features/analysis/upgrade_card.dart';
@@ -36,24 +37,16 @@ class PcSummaryView extends ConsumerWidget {
     final settings = ref.watch(analysisSettingsProvider);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(
-        Space.page,
-        Space.xs,
-        Space.page,
-        Space.xl,
-      ),
+      padding: Insets.page,
       children: [
         if (general == null)
-          EmptyHint(
+          StatView.empty(
             icon: Icons.speed_rounded,
             message:
-                'Bilgisayarını ekle; oyunlarda nasıl olduğunu ve neyin '
-                'onu yavaşlattığını sade dille söyleyelim.',
-            action: FilledButton.icon(
-              onPressed: () => showAddDeviceSheet(context, ref, DeviceKind.pc),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Bilgisayarımı ekle'),
-            ),
+                'Bilgisayarını ekle. Oyunlarda nasıl olduğunu ve neyin onu '
+                'yavaşlattığını sade dille söyleyelim.',
+            actionLabel: 'Bilgisayarımı ekle',
+            onAction: () => showAddDeviceSheet(context, ref, DeviceKind.pc),
           )
         else ...[
           AppSegmented<Resolution>(
@@ -64,16 +57,16 @@ class PcSummaryView extends ConsumerWidget {
                 .read(analysisSettingsProvider.notifier)
                 .update((s) => s.copyWith(resolution: r)),
           ),
-          const SizedBox(height: Space.m),
+          const SizedBox(height: Space.l),
           PlainVerdictCard(verdict: pcVerdict(general)),
-          const SizedBox(height: Space.s),
+          const SizedBox(height: Space.cardGap),
           GeneralBottleneckCard(general: general),
-          const SizedBox(height: Space.s),
-          const _ResolutionCard(),
-          const SizedBox(height: Space.s),
+          const SizedBox(height: Space.cardGap),
           const UpgradeCard(),
+          const SizedBox(height: Space.cardGap),
+          const _ResolutionCard(),
         ],
-        const SizedBox(height: Space.s),
+        const SizedBox(height: Space.cardGap),
         CompatibilityCard(report: report),
       ],
     );

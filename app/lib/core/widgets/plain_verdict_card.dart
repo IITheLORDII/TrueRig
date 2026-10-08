@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/features/analysis/plain_verdict.dart';
 
@@ -46,18 +47,13 @@ class PlainVerdictCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(icon, color: color, size: 32),
+                  Icon(icon, color: color, size: IconSizes.l),
                   const SizedBox(width: Space.m),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          verdict.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        Text(verdict.title, style: theme.textTheme.titleLarge),
                         const SizedBox(height: Space.xs),
                         Text(verdict.detail, style: theme.textTheme.bodyMedium),
                       ],
@@ -69,9 +65,9 @@ class PlainVerdictCard extends StatelessWidget {
                 const SizedBox(height: Space.s),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: FilledButton.tonal(
+                  child: SecondaryButton(
+                    label: actionLabel!,
                     onPressed: onAction,
-                    child: Text(actionLabel!),
                   ),
                 ),
               ],
