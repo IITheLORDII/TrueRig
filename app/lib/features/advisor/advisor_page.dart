@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/providers.dart';
@@ -65,7 +66,11 @@ class _AdvisorPageState extends ConsumerState<AdvisorPage> {
         if (!didPop) _back();
       },
       child: Scaffold(
-        appBar: AppBar(title: const BrandTitle('Sana uygun bilgisayar')),
+        appBar: AppBar(
+          leading: const PageBackButton(),
+          title: const BrandTitle('Sana uygun bilgisayar'),
+          actions: const [HomeButton()],
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

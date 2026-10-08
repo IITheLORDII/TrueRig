@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -72,7 +73,11 @@ class _CartPageState extends ConsumerState<CartPage> {
     if (isLaptopBuild(build.cpu, gpu)) {
       final system = (label ?? '').split(' · ').first;
       return Scaffold(
-        appBar: AppBar(title: const BrandTitle('Sepeti hazırla')),
+        appBar: AppBar(
+          leading: const PageBackButton(),
+          title: const BrandTitle('Sepeti hazırla'),
+          actions: const [HomeButton()],
+        ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
             Space.page,
@@ -99,7 +104,11 @@ class _CartPageState extends ConsumerState<CartPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('Sepeti hazırla')),
+      appBar: AppBar(
+        leading: const PageBackButton(),
+        title: const BrandTitle('Sepeti hazırla'),
+        actions: const [HomeButton()],
+      ),
       body: build.parts.isEmpty
           ? EmptyHint(
               icon: Icons.shopping_cart_outlined,

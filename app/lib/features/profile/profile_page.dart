@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:go_router/go_router.dart';
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/widgets/common.dart';
@@ -15,7 +16,11 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('Profil')),
+      appBar: AppBar(
+        leading: const PageBackButton(),
+        title: const BrandTitle('Profil'),
+        actions: const [HomeButton()],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [

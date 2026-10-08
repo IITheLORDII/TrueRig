@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -92,8 +93,10 @@ class _SandboxPageState extends ConsumerState<SandboxPage> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const PageBackButton(),
         title: const BrandTitle('Analiz yap'),
         actions: [
+          const HomeButton(),
           IconButton(
             tooltip: 'Temizle',
             icon: const Icon(Icons.restart_alt_rounded),

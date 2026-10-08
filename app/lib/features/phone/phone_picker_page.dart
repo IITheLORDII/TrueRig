@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -31,6 +32,8 @@ class _PhonePickerPageState extends ConsumerState<PhonePickerPage> {
     final phones = catalog.searchPhones(_query, brand: _brand);
     return Scaffold(
       appBar: AppBar(
+        leading: const PageBackButton(),
+        actions: const [HomeButton()],
         title: BrandTitle(switch (widget.mode) {
           'pair' => 'Saatin telefonu',
           'compare' => 'Karşılaştırılacak telefon',

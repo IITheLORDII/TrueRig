@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
 /// Scans an EAN/UPC barcode or QR on a part box and pops with the raw value.
@@ -42,7 +43,11 @@ class _ScannerPageState extends State<ScannerPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const BrandTitle('Barkod / Seri No Tara')),
+    appBar: AppBar(
+      leading: const PageBackButton(),
+      title: const BrandTitle('Barkod / Seri No Tara'),
+      actions: const [HomeButton()],
+    ),
     body: Stack(
       fit: StackFit.expand,
       children: [

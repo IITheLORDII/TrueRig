@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
@@ -113,7 +114,11 @@ class _WatchPickerPageState extends ConsumerState<WatchPickerPage> {
     final catalog = ref.watch(mobileCatalogProvider);
     final watches = catalog.searchWatches(_query, brand: _brand);
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('Saat seç')),
+      appBar: AppBar(
+        leading: const PageBackButton(),
+        title: const BrandTitle('Saat seç'),
+        actions: const [HomeButton()],
+      ),
       body: Column(
         children: [
           PickerSearchField(

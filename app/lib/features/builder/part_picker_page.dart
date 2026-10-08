@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/features/sandbox/sandbox_state.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
@@ -60,7 +61,11 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
     final rows = _rank(parts, build);
 
     return Scaffold(
-      appBar: AppBar(title: BrandTitle('${widget.category.label} seç')),
+      appBar: AppBar(
+        leading: const PageBackButton(),
+        title: BrandTitle('${widget.category.label} seç'),
+        actions: const [HomeButton()],
+      ),
       body: Column(
         children: [
           Padding(

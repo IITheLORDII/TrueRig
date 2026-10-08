@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'support.dart';
@@ -49,6 +50,27 @@ void main() {
     expect(find.byType(BackButton), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
+    expect(onHome(tester), isTrue);
+  });
+
+  testWidgets('a page opened from a link still has back and home', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+    // Like typing the address or refreshing: nothing to pop back to.
+    GoRouter.of(tester.element(find.byType(NavigationBar))).go('/advisor');
+    await tester.pumpAndSettle();
+    expect(find.text('Bilgisayarda ne yapacaksın?'), findsOneWidget);
+    expect(find.byTooltip('Ana Sayfa'), findsOneWidget);
+    await tap(tester, find.byTooltip('Geri'));
+    expect(onHome(tester), isTrue);
+  });
+
+  testWidgets('home button on inner pages goes to Ana Sayfa', (tester) async {
+    await pumpApp(tester);
+    await openTab(tester, 'Parça Ara');
+    await tap(tester, find.byTooltip('Profil ve ayarlar'));
+    await tap(tester, find.byTooltip('Ana Sayfa'));
     expect(onHome(tester), isTrue);
   });
 }

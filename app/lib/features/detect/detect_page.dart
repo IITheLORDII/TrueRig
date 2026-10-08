@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -70,7 +71,11 @@ class _DetectPageState extends ConsumerState<DetectPage> {
   Widget build(BuildContext context) {
     final detection = ref.watch(detectionProvider);
     return Scaffold(
-      appBar: AppBar(title: const BrandTitle('Sistemini Algıla')),
+      appBar: AppBar(
+        leading: const PageBackButton(),
+        title: const BrandTitle('Sistemini Algıla'),
+        actions: const [HomeButton()],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
         children: [
