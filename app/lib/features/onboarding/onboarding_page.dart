@@ -6,6 +6,8 @@ import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/score_scale.dart';
 import 'package:darbogaz/features/device/device_page.dart';
 
@@ -80,7 +82,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 children: [
                   const BrandTitle('Hoş geldin'),
                   const Spacer(),
-                  TextButton(onPressed: _finish, child: const Text('Atla')),
+                  TertiaryButton(label: 'Atla', onPressed: _finish),
                 ],
               ),
             ),
@@ -128,17 +130,18 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                         color: i == _index
                             ? theme.colorScheme.primary
                             : context.palette.surfaceAlt,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(Radii.pill),
                       ),
                     ),
                   const Spacer(),
                   if (_index < _count - 1)
-                    FilledButton(onPressed: _next, child: const Text('Devam'))
+                    PrimaryButton(
+                      label: 'Devam',
+                      expand: false,
+                      onPressed: _next,
+                    )
                   else
-                    TextButton(
-                      onPressed: _finish,
-                      child: const Text('Şimdilik geç'),
-                    ),
+                    TertiaryButton(label: 'Şimdilik geç', onPressed: _finish),
                 ],
               ),
             ),
@@ -168,14 +171,12 @@ class _TourPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(Space.xl),
       children: [
-        Icon(icon, size: 72, color: theme.colorScheme.primary),
+        Icon(icon, size: 64, color: theme.colorScheme.primary),
         const SizedBox(height: Space.l),
         Text(
           title,
           textAlign: TextAlign.center,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: theme.textTheme.headlineSmall,
         ),
         const SizedBox(height: Space.l),
         // One short sentence per line, easy to scan.
@@ -190,14 +191,7 @@ class _TourPage extends StatelessWidget {
                   color: theme.colorScheme.primary,
                 ),
                 const SizedBox(width: Space.m),
-                Expanded(
-                  child: Text(
-                    l,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                Expanded(child: Text(l, style: theme.textTheme.titleMedium)),
               ],
             ),
           ),
@@ -218,14 +212,12 @@ class _ChooseDevice extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(Space.xl),
       children: [
-        Icon(Icons.devices_rounded, size: 72, color: theme.colorScheme.primary),
+        Icon(Icons.devices_rounded, size: 64, color: theme.colorScheme.primary),
         const SizedBox(height: Space.l),
         Text(
           'Neyin var?',
           textAlign: TextAlign.center,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: theme.textTheme.headlineSmall,
         ),
         const SizedBox(height: Space.s),
         Text(
@@ -237,25 +229,14 @@ class _ChooseDevice extends StatelessWidget {
         for (final k in DeviceKind.values)
           Padding(
             padding: const EdgeInsets.only(bottom: Space.s),
-            child: Card(
-              clipBehavior: Clip.antiAlias,
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: Space.l,
-                  vertical: Space.s,
-                ),
-                leading: Icon(switch (k) {
-                  DeviceKind.pc => Icons.computer_rounded,
-                  DeviceKind.phone => Icons.smartphone_rounded,
-                  DeviceKind.watch => Icons.watch_rounded,
-                }, size: 32),
-                title: Text(
-                  k.mine,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => onChoose(k),
-              ),
+            child: NavCard(
+              icon: switch (k) {
+                DeviceKind.pc => Icons.computer_rounded,
+                DeviceKind.phone => Icons.smartphone_rounded,
+                DeviceKind.watch => Icons.watch_rounded,
+              },
+              title: k.mine,
+              onTap: () => onChoose(k),
             ),
           ),
       ],
