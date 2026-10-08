@@ -112,7 +112,7 @@ class _PricesPageState extends ConsumerState<PricesPage> {
         actions: const [ProfileAction()],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+        padding: Insets.page,
         children: [
           TextField(
             controller: _controller,

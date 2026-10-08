@@ -124,7 +124,7 @@ List<CompareSection> comparePcs(
             apps.estimate(app, b).score,
           ),
     ]),
-    CompareSection('AI (LLM-local) · token/sn, Q4', [
+    CompareSection('Yapay zekâ (LLM-local) · kelime/sn', [
       for (final id in _pcLlms)
         if (kLlmModels.where((x) => x.id == id).firstOrNull case final m?)
           CompareRow(m.name, tok(a, m), tok(b, m), decimals: 1),

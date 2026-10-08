@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/verdicts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
@@ -47,7 +50,7 @@ class GamesTab extends ConsumerWidget {
     final palette = context.palette;
     final selected = ref.watch(fpsEstimateProvider);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         const AnalysisSettingsBar(),
         const SizedBox(height: 12),
@@ -67,7 +70,7 @@ class GamesTab extends ConsumerWidget {
                   value: e.avgFps,
                   max: _barFullScaleFps,
                   valueText: '${e.minFps.round()}–${e.maxFps.round()}',
-                  color: _fpsColor(palette, e.avgFps),
+                  color: toneColor(context, fpsTone(e.avgFps)),
                   subtitle: _subtitle(e),
                 ),
               const SizedBox(height: 8),
@@ -85,18 +88,11 @@ class GamesTab extends ConsumerWidget {
     );
   }
 
-  static Color _fpsColor(AppPalette p, double fps) {
-    if (fps >= 144) return p.good;
-    if (fps >= 60) return const Color(0xFF00E5FF);
-    if (fps >= 30) return p.warn;
-    return p.bad;
-  }
-
   static String _subtitle(FpsEstimate e) {
     final limiter = switch (e.limiter) {
-      Limiter.cpu => 'CPU sınırlı',
-      Limiter.gpu => 'GPU sınırlı',
-      Limiter.balanced => 'Dengeli',
+      Limiter.cpu => 'işlemci sınırlıyor',
+      Limiter.gpu => 'ekran kartı sınırlıyor',
+      Limiter.balanced => 'dengeli',
     };
     final cap = e.game.engineFpsCap;
     return [

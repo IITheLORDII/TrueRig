@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/saved_devices.dart';
-import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/device_chip.dart';
 
 /// "Kayıtlı sistemler": every saved PC / phone / watch on this device.
@@ -42,11 +44,10 @@ class SavedDevicesCard extends ConsumerWidget {
             Text(
               "Henüz kayıtlı cihaz yok. Cihazlarım'dan bilgisayar, telefon "
               've saat ekleyebilirsin.',
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodyMedium,
             ),
           for (final r in rows)
             ListTile(
-              dense: true,
               contentPadding: EdgeInsets.zero,
               leading: Icon(deviceIcon(r.kind)),
               title: Text(
@@ -61,7 +62,15 @@ class SavedDevicesCard extends ConsumerWidget {
               trailing: IconButton(
                 tooltip: 'Sil',
                 icon: const Icon(Icons.delete_outline_rounded),
-                onPressed: () => ctl.remove(r.kind, r.index),
+                onPressed: () async {
+                  final name = ctl.labelOf(r.kind, r.index);
+                  final ok = await confirmAction(
+                    context,
+                    title: '$name silinsin mi?',
+                    message: 'Bu cihaz kayıtlı listeden çıkarılır.',
+                  );
+                  if (ok) ctl.remove(r.kind, r.index);
+                },
               ),
               onTap: () {
                 ctl.switchTo(r.kind, r.index);
@@ -69,14 +78,8 @@ class SavedDevicesCard extends ConsumerWidget {
                 context.go('/devices?kind=${r.kind.name}');
               },
             ),
-          const SizedBox(height: 4),
-          Text(
-            'Bu cihazda saklanır. Hesapla eşitleme, giriş özelliği '
-            'eklendiğinde açılacak.',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: context.palette.muted,
-            ),
-          ),
+          const SizedBox(height: Space.xs),
+          const Footnote('Bu telefonda saklanır, hiçbir yere gönderilmez.'),
         ],
       ),
     );

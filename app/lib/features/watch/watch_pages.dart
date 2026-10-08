@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -7,7 +9,7 @@ import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/common.dart';
-import 'package:darbogaz/features/phone/phone_picker_page.dart';
+import 'package:darbogaz/core/widgets/picker.dart';
 import 'package:darbogaz/features/watch/pairing_card.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
@@ -38,7 +40,7 @@ class WatchPanel extends ConsumerWidget {
     final phone = report.phone;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         Card(
           child: ListTile(
@@ -131,35 +133,33 @@ class _WatchPickerPageState extends ConsumerState<WatchPickerPage> {
             onSelected: (b) => setState(() => _brand = b),
           ),
           Expanded(
-            child: watches.isEmpty
-                ? const Center(child: Text('Sonuç bulunamadı'))
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
-                    itemCount: watches.length,
-                    itemBuilder: (context, i) {
-                      final w = watches[i];
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.watch_rounded),
-                        title: Text(w.displayName),
-                        subtitle: Text(
-                          '${w.os.label} · ${w.year} · '
-                          '${w.worksWith.map((p) => p.label).join(' + ')}',
-                        ),
-                        onTap: () {
-                          if (widget.returnMode) {
-                            context.pop(w);
-                            return;
-                          }
-                          ref.read(watchSelectionProvider.notifier).select(w);
-                          ref
-                              .read(activeDeviceProvider.notifier)
-                              .set(DeviceKind.watch);
-                          context.pop();
-                        },
-                      );
-                    },
-                  ),
+            child: PickerList(
+              itemCount: watches.length,
+              itemBuilder: (context, i) {
+                final w = watches[i];
+                return PickerTile(
+                  icon: Icons.watch_rounded,
+                  title: w.displayName,
+                  subtitle:
+                      '${w.os.label} · ${w.year} · '
+                      '${w.worksWith.map((p) => p.label).join(' + ')} ile çalışır',
+                  selected:
+                      !widget.returnMode &&
+                      ref.watch(watchSelectionProvider)?.watchId == w.id,
+                  onTap: () {
+                    if (widget.returnMode) {
+                      context.pop(w);
+                      return;
+                    }
+                    ref.read(watchSelectionProvider.notifier).select(w);
+                    ref
+                        .read(activeDeviceProvider.notifier)
+                        .set(DeviceKind.watch);
+                    context.pop();
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

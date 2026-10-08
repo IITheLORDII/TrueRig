@@ -97,7 +97,7 @@ void main() {
     expect(find.text('Counter-Strike 2'), findsOneWidget);
     await tapText(tester, 'Uygulama');
     expect(find.text('SolidWorks'), findsOneWidget);
-    await tapText(tester, 'AI (LLM-local)');
+    await tapText(tester, 'Yapay zekâ (LLM-local)');
     expect(find.text('Qwen3 8B'), findsOneWidget);
   });
 

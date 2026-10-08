@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
@@ -20,7 +22,7 @@ class PhonePanel extends ConsumerWidget {
     final showSelf = self != null && spec?.phone.id != self.phone.id;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         if (showSelf) ...[
           _SelfPhoneCard(match: self),

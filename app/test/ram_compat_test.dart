@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'package:darbogaz/core/widgets/picker.dart';
+
 import 'support.dart';
 
 void main() {
@@ -51,6 +53,6 @@ void main() {
     await tapText(tester, 'RAM');
     await search(tester, 'SO-DIMM');
     expect(find.textContaining('Dizüstü (SO-DIMM)'), findsWidgets);
-    expect(find.byType(ListTile), findsWidgets);
+    expect(find.byType(PickerTile), findsWidgets);
   });
 }

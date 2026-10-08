@@ -7,7 +7,11 @@ import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
 import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/flow.dart';
+import 'package:darbogaz/core/widgets/picker.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 
 /// A ready-made or parsed system chosen in the picker.
@@ -94,8 +98,6 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
     final parsed = _query.trim().length >= 6
         ? SpecTextParser(catalog).parse(_query)
         : null;
-    final palette = context.palette;
-
     return Scaffold(
       appBar: AppBar(
         leading: const PageBackButton(),
@@ -104,24 +106,14 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: TextField(
-              minLines: 1,
-              maxLines: 3,
-              onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText:
-                    'Model (ör. Excalibur G770) ya da ilan başlığını '
-                    'yapıştır',
-                isDense: true,
-              ),
-            ),
+          PickerSearchField(
+            multiline: true,
+            hint: 'Model (ör. Excalibur G770) ya da ilan başlığını yapıştır',
+            onChanged: (v) => setState(() => _query = v),
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              padding: Insets.page,
               children: [
                 if (parsed != null && !parsed.isEmpty) ...[
                   _ParsedCard(
@@ -136,36 +128,30 @@ class _PrebuiltPickerState extends ConsumerState<PrebuiltPickerPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: Space.m),
                 ],
                 if (systems.isEmpty && (parsed == null || parsed.isEmpty))
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(
-                      'Listede yoksa mağazadaki ürün başlığını olduğu gibi '
-                      'yapıştır; işlemci, ekran kartı ve RAM\'i biz bulalım.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: palette.muted),
-                    ),
+                  const StatView.empty(
+                    icon: Icons.content_paste_search_rounded,
+                    message:
+                        'Listede yoksa mağazadaki ürün başlığını olduğu gibi '
+                        'yapıştır; işlemci, ekran kartı ve RAM\'i biz bulalım.',
                   ),
-                for (final s in systems)
-                  ListTile(
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      s.isLaptop
-                          ? Icons.laptop_chromebook_rounded
-                          : Icons.desktop_windows_rounded,
-                    ),
-                    title: Text(s.displayName),
-                    subtitle: Text(
-                      '${s.isLaptop ? 'Dizüstü' : 'Masaüstü'} · '
-                      '${s.variants.length} yapılandırma'
-                      '${_yearSpan(s)}',
-                    ),
-                    trailing: const Icon(Icons.chevron_right_rounded),
+                for (final s in systems) ...[
+                  PickerTile(
+                    icon: s.isLaptop
+                        ? Icons.laptop_chromebook_rounded
+                        : Icons.desktop_windows_rounded,
+                    title: s.displayName,
+                    subtitle:
+                        '${s.isLaptop ? 'Dizüstü' : 'Masaüstü'} · '
+                        '${s.variants.length} yapılandırma'
+                        '${_yearSpan(s)}',
+                    showChevron: true,
                     onTap: () => _pickSystem(s),
                   ),
+                  const SizedBox(height: Space.s),
+                ],
               ],
             ),
           ),
@@ -199,14 +185,14 @@ class _VariantSheet extends StatelessWidget {
       ..sort((a, b) => (b.year ?? 0).compareTo(a.year ?? 0));
     final children = <Widget>[
       Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+        padding: const EdgeInsets.fromLTRB(Space.xl, 0, Space.xl, Space.xs),
         child: Text(
           '${system.displayName} · yapılandırma',
           style: theme.textTheme.titleMedium,
         ),
       ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+        padding: const EdgeInsets.fromLTRB(Space.xl, 0, Space.xl, Space.s),
         child: Text(
           'Etiketteki ya da faturadaki işlemci ve ekran kartını seç.',
           style: theme.textTheme.bodySmall?.copyWith(color: palette.muted),
@@ -219,7 +205,12 @@ class _VariantSheet extends StatelessWidget {
         lastYear = v.year;
         children.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 2),
+            padding: const EdgeInsets.fromLTRB(
+              Space.xl,
+              Space.m,
+              Space.xl,
+              Space.xs,
+            ),
             child: Text(
               v.year?.toString() ?? 'Diğer',
               style: theme.textTheme.labelLarge?.copyWith(
@@ -232,8 +223,9 @@ class _VariantSheet extends StatelessWidget {
       }
       children.add(
         ListTile(
-          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: Space.xl),
           title: Text(variantLabel(catalog, v)),
+          trailing: const Icon(Icons.chevron_right_rounded),
           subtitle: v.code == null ? null : Text(v.code!),
           onTap: () => Navigator.of(context).pop(v),
         ),
@@ -293,8 +285,8 @@ class _ParsedCard extends StatelessWidget {
           row('İşlemci', parsed.cpu),
           row('Ekran kartı', parsed.gpu),
           row('RAM', parsed.ram),
-          const SizedBox(height: 8),
-          FilledButton(onPressed: onApply, child: const Text('Bununla doldur')),
+          const SizedBox(height: Space.m),
+          PrimaryButton(label: 'Bununla doldur', onPressed: onApply),
         ],
       ),
     );

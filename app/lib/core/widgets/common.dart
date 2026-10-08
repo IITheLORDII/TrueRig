@@ -185,6 +185,18 @@ class StatusPill extends StatelessWidget {
 
 enum Tone { good, warn, bad, neutral, brand }
 
+/// The one colour for each [Tone].
+Color toneColor(BuildContext context, Tone tone) {
+  final p = context.palette;
+  return switch (tone) {
+    Tone.good => p.good,
+    Tone.warn => p.warn,
+    Tone.bad => p.bad,
+    Tone.neutral => p.muted,
+    Tone.brand => Theme.of(context).colorScheme.primary,
+  };
+}
+
 /// Status label with one meaning per colour across the app.
 class VerdictChip extends StatelessWidget {
   const VerdictChip(this.text, {super.key, this.tone = Tone.neutral});
@@ -193,17 +205,8 @@ class VerdictChip extends StatelessWidget {
   final Tone tone;
 
   @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final color = switch (tone) {
-      Tone.good => p.good,
-      Tone.warn => p.warn,
-      Tone.bad => p.bad,
-      Tone.neutral => p.muted,
-      Tone.brand => Theme.of(context).colorScheme.primary,
-    };
-    return StatusPill(text: text, color: color);
-  }
+  Widget build(BuildContext context) =>
+      StatusPill(text: text, color: toneColor(context, tone));
 }
 
 /// Small uppercase heading above a group of rows.

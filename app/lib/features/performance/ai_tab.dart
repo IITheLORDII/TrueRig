@@ -108,7 +108,7 @@ class LlmRow extends StatelessWidget {
       max: 100,
       valueText: r.placement == LlmPlacement.doesNotFit
           ? 'Sığmaz'
-          : '${r.tokensPerSecond.toStringAsFixed(r.tokensPerSecond < 10 ? 1 : 0)} t/s',
+          : '${r.tokensPerSecond.toStringAsFixed(r.tokensPerSecond < 10 ? 1 : 0)} kelime/sn',
       color: color,
       subtitle: '$where · $needs gerekli · ${r.verdict}',
     );

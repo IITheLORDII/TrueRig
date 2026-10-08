@@ -42,7 +42,7 @@ class PcPanel extends ConsumerWidget {
         : _mainSlots;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         _PrebuiltCard(selection: prebuilt),
         const SizedBox(height: 8),

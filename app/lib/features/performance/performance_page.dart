@@ -26,7 +26,7 @@ extension on _Section {
     _Section.summary => 'Özet',
     _Section.games => 'Oyun',
     _Section.apps => 'Uygulama',
-    _Section.ai => 'AI (LLM-local)',
+    _Section.ai => 'Yapay zekâ (LLM-local)',
     _Section.mobile => 'Mobil',
     _Section.compat => 'Uyumluluk',
   };
@@ -152,7 +152,7 @@ class _PerformancePageState extends ConsumerState<PerformancePage> {
         }
         return switch (section) {
           _Section.compat => ListView(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            padding: Insets.page,
             children: [
               CompatibilityCard(
                 report: CompatibilityReport(report.issues, null),

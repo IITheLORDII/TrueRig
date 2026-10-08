@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:perf_engine/perf_engine.dart';
 
@@ -47,7 +49,7 @@ class PhoneSummaryView extends ConsumerWidget {
       currentYear: DateTime.now().year,
     );
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         PlainVerdictCard(verdict: phoneVerdict(s, insights)),
         const SizedBox(height: 8),
@@ -143,7 +145,7 @@ class PhoneGamesView extends ConsumerWidget {
     final preset = ref.watch(_mobilePresetProvider);
     final palette = context.palette;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         AppSegmented<GraphicsPreset>(
           values: GraphicsPreset.values,
@@ -194,7 +196,7 @@ class PhoneAppsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final results = [for (final a in kMobileApps) _est.app(a, spec)];
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       itemCount: results.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (_, i) => AppResultCard(result: results[i]),
@@ -214,7 +216,7 @@ class WatchSummaryView extends ConsumerWidget {
     final palette = context.palette;
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+      padding: Insets.page,
       children: [
         PlainVerdictCard(verdict: watchVerdict(report)),
         const SizedBox(height: 8),

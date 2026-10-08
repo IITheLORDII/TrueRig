@@ -8,7 +8,11 @@ import 'package:darbogaz/features/sandbox/sandbox_state.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
-import 'package:darbogaz/core/theme/app_theme.dart';
+import 'package:darbogaz/core/theme/tokens.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
+import 'package:darbogaz/core/widgets/cards.dart';
+import 'package:darbogaz/core/widgets/common.dart';
+import 'package:darbogaz/core/widgets/picker.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -37,14 +41,7 @@ class PartPickerPage extends ConsumerStatefulWidget {
 }
 
 class _PartPickerPageState extends ConsumerState<PartPickerPage> {
-  final _controller = TextEditingController();
   String _query = '';
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,72 +65,68 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: TextField(
-              controller: _controller,
-              onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search_rounded),
-                hintText: 'Model adı veya seri/parça no (MPN)',
-              ),
-            ),
+          PickerSearchField(
+            hint: 'Model adı ya da parça kodu (MPN)',
+            onChanged: (v) => setState(() => _query = v),
           ),
           Expanded(
-            child: rows.isEmpty
-                ? const Center(child: Text('Sonuç bulunamadı'))
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                    itemCount: rows.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, i) => _PartRow(
-                      row: rows[i],
-                      selected:
-                          build.partFor(widget.category)?.id == rows[i].part.id,
-                      onTap: () async {
-                        if (rows[i].errors.isNotEmpty &&
-                            !await _confirmIncompatible(rows[i])) {
-                          return;
-                        }
-                        if (!context.mounted) return;
-                        if (widget.returnMode) {
-                          context.pop(rows[i].part);
-                          return;
-                        }
-                        ref.read(buildProvider.notifier).setPart(rows[i].part);
-                        ref.read(prebuiltProvider.notifier).markEdited();
-                        ref
-                            .read(activeDeviceProvider.notifier)
-                            .set(DeviceKind.pc);
-                        context.pop();
-                      },
-                    ),
-                  ),
+            child: PickerList(
+              itemCount: rows.length,
+              itemBuilder: (context, i) => _PartRow(
+                row: rows[i],
+                selected: build.partFor(widget.category)?.id == rows[i].part.id,
+                onTap: () => _choose(rows[i]),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _choose(_Row row) async {
+    if (row.errors.isNotEmpty && !await _confirmIncompatible(row)) return;
+    if (!mounted) return;
+    if (widget.returnMode) {
+      context.pop(row.part);
+      return;
+    }
+    ref.read(buildProvider.notifier).setPart(row.part);
+    ref.read(prebuiltProvider.notifier).markEdited();
+    ref.read(activeDeviceProvider.notifier).set(DeviceKind.pc);
+    context.pop();
+  }
+
   /// Incompatible parts stay selectable (people compare on purpose), but
   /// only after saying why they will not work together.
   Future<bool> _confirmIncompatible(_Row row) async {
-    final ok = await showDialog<bool>(
+    final ok = await showModalBottomSheet<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.warning_rounded, color: ctx.palette.bad, size: 36),
-        title: const Text('Bu parça uyumsuz'),
-        content: Text(row.errors.join('\n\n')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Yine de seç'),
-          ),
-        ],
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(Space.xl, 0, Space.xl, Space.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Notice(
+              title: 'Bu parça uyumsuz',
+              message: row.errors.join('\n\n'),
+              tone: Tone.bad,
+            ),
+            const SizedBox(height: Space.xl),
+            PrimaryButton(
+              label: 'Vazgeç',
+              onPressed: () => Navigator.of(ctx).pop(false),
+            ),
+            const SizedBox(height: Space.s),
+            TertiaryButton(
+              label: 'Yine de seç',
+              onPressed: () => Navigator.of(ctx).pop(true),
+            ),
+          ],
+        ),
       ),
     );
     return ok ?? false;
@@ -189,53 +182,20 @@ class _PartRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final palette = context.palette;
-    final incompatible = row.errors.isNotEmpty;
     final price = row.part.refPriceUsd;
-    return Opacity(
-      opacity: incompatible ? 0.55 : 1,
-      child: Card(
-        shape: selected
-            ? RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-                side: BorderSide(color: theme.colorScheme.primary, width: 1.5),
-              )
-            : null,
-        clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          onTap: onTap,
-          leading: PartThumb(
-            imageUrl: ref.watch(partImageProvider(row.part)),
-            fallbackIcon: row.part.category.icon,
-          ),
-          title: Text(
-            row.part.displayName,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(partSubtitle(row.part)),
-              if (incompatible)
-                Text(
-                  row.errors.first,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: palette.bad,
-                  ),
-                ),
-            ],
-          ),
-          trailing: price == null || price == 0
-              ? null
-              : Text(
-                  '~\$${price.toStringAsFixed(0)}',
-                  style: numberStyle(context, size: 13, color: palette.muted),
-                ),
-        ),
+    return PickerTile(
+      leading: PartThumb(
+        imageUrl: ref.watch(partImageProvider(row.part)),
+        fallbackIcon: row.part.category.icon,
       ),
+      title: row.part.displayName,
+      subtitle: partSubtitle(row.part),
+      warning: row.errors.isEmpty ? null : row.errors.first,
+      trailingText: price == null || price == 0
+          ? null
+          : '~\$${price.toStringAsFixed(0)}',
+      selected: selected,
+      onTap: onTap,
     );
   }
 }

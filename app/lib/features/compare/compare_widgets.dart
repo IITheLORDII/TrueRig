@@ -12,7 +12,7 @@ import 'package:darbogaz/features/prices/store_list.dart';
 abstract final class CompareColors {
   static Color mine(BuildContext context) =>
       Theme.of(context).colorScheme.primary;
-  static Color other(BuildContext context) => const Color(0xFFB388FF);
+  static Color other(BuildContext context) => context.palette.accentAlt;
 }
 
 /// One side of the comparison (name + tap to change).
