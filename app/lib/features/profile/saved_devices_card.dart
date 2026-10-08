@@ -79,7 +79,7 @@ class SavedDevicesCard extends ConsumerWidget {
               },
             ),
           const SizedBox(height: Space.xs),
-          const Footnote('Bu telefonda saklanır, hiçbir yere gönderilmez.'),
+          const Footnote('Bu cihazda saklanır, hiçbir yere gönderilmez.'),
         ],
       ),
     );

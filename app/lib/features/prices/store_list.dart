@@ -257,6 +257,8 @@ class _StoreListState extends ConsumerState<StoreList> {
               data: Theme.of(context)
                   .copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
+                // Rebuilt when prices arrive so it collapses again.
+                key: ValueKey(priced.isEmpty),
                 tilePadding: EdgeInsets.zero,
                 initiallyExpanded: priced.isEmpty,
                 title: Text(
