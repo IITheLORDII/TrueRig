@@ -117,4 +117,56 @@ void main() {
         PcBuild(motherboard: part<Motherboard>('msi-b650i-edge'), ram: quad);
     expect(codes(b), contains('ram_slots'));
   });
+
+  group('memory without a motherboard', () {
+    PcBuild build(String cpu, String ram, [String? gpu]) {
+      var b = PcBuild(cpu: part<Cpu>(cpu), ram: part<Ram>(ram));
+      if (gpu != null) b = b.withPart(part<Gpu>(gpu));
+      return b;
+    }
+
+    test('DDR4-only CPU with DDR5 memory is an error', () {
+      final b = build('r5-5600', 'ram-ddr5-6000-2x16');
+      expect(codes(b), contains('ram_cpu_type'));
+      final msg = checker
+          .check(b)
+          .issues
+          .firstWhere((i) => i.code == 'ram_cpu_type')
+          .message;
+      expect(msg, contains('DDR4'));
+    });
+
+    test('laptop CPU with desktop DIMM memory is an error', () {
+      expect(codes(build('i5-10300h', 'ram-ddr4-3200-2x8')),
+          contains('ram_form_laptop'));
+    });
+
+    test('laptop CPU with matching SO-DIMM memory is fine', () {
+      final c =
+          codes(build('i5-10300h', 'ram-so-ddr4-3200-2x8', 'gtx-1650-laptop'));
+      expect(
+          c.intersection(
+              {'ram_cpu_type', 'ram_form_laptop', 'ram_form_desktop'}),
+          isEmpty);
+    });
+
+    test('desktop CPU with SO-DIMM memory is an error', () {
+      expect(codes(build('i5-13400f', 'ram-so-ddr4-3200-2x8')),
+          contains('ram_form_desktop'));
+    });
+
+    test('DDR3 platform: DDR3 fits, DDR4 does not', () {
+      final ok = codes(build('i7-4790k', 'ram-ddr3-1600-2x8'));
+      expect(ok.intersection({'ram_cpu_type', 'ram_form_desktop'}), isEmpty);
+      expect(codes(build('i7-4790k', 'ram-ddr4-3200-2x8')),
+          contains('ram_cpu_type'));
+    });
+
+    test('with a board the existing board rule reports it once', () {
+      final b = goodBuild.withPart(part<Ram>('ram-ddr4-3200-2x16'));
+      final c = checker.check(b).issues.map((i) => i.code).toList();
+      expect(c, contains('ram_type_mismatch'));
+      expect(c, isNot(contains('ram_cpu_type')));
+    });
+  });
 }

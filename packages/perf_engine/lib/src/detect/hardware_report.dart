@@ -91,6 +91,7 @@ class HardwareReport {
 
   /// SMBIOS type 17 memory type codes.
   static MemoryType? _smbiosMemoryType(int? code) => switch (code) {
+        24 => MemoryType.ddr3,
         26 => MemoryType.ddr4,
         34 => MemoryType.ddr5,
         _ => null,
@@ -180,10 +181,20 @@ class HardwareDetector {
       brand: 'Algılanan',
       model: label,
       type: type,
-      speedMts: speed > 0 ? speed : (type == MemoryType.ddr5 ? 4800 : 2666),
+      speedMts: speed > 0
+          ? speed
+          : switch (type) {
+              MemoryType.ddr5 => 4800,
+              MemoryType.ddr4 => 2666,
+              MemoryType.ddr3 => 1600,
+            },
       moduleCount: mods.length,
       moduleSizeGb: size,
       casLatency: 0,
+      // A soldered (laptop) processor means laptop memory.
+      formFactor: cpu != null && isSolderedCpu(cpu)
+          ? RamFormFactor.sodimm
+          : RamFormFactor.dimm,
     );
   }
 }

@@ -58,7 +58,9 @@ class SandboxPcEditor extends ConsumerWidget {
     WidgetRef ref,
     PartCategory c,
   ) async {
-    final part = await context.push<Part>('/pick/part/${c.name}?mode=return');
+    final part = await context.push<Part>(
+      '/pick/part/${c.name}?mode=return&for=sandbox$slot',
+    );
     if (part != null) ref.read(sandboxProvider.notifier).setPart(slot, part);
   }
 

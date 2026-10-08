@@ -152,11 +152,16 @@ class FpsEstimator {
   static double ramFactor(Cpu cpu, Ram? ram) {
     if (ram == null) return 1.0;
     final isX3d = cpu.model.contains('X3D');
-    final baseline = ram.type == MemoryType.ddr5 ? 6000 : 3600;
+    final baseline = switch (ram.type) {
+      MemoryType.ddr5 => 6000,
+      MemoryType.ddr4 => 3600,
+      MemoryType.ddr3 => 1600,
+    };
     final speedDelta = (ram.speedMts - baseline) / baseline;
     final sensitivity = isX3d ? 0.15 : 0.35;
     var f = 1 + speedDelta * sensitivity;
     if (ram.type == MemoryType.ddr4) f *= isX3d ? 0.98 : 0.95;
+    if (ram.type == MemoryType.ddr3) f *= 0.9;
     if (ram.moduleCount == 1) f *= 0.85;
     if (ram.totalGb < 16) f *= 0.8;
     return f.clamp(0.6, 1.08).toDouble();

@@ -256,15 +256,6 @@ class UpgradeAdvisor {
       ];
 }
 
-/// Laptop / BGA CPUs (Intel BGA*, AMD FP*/FL*) cannot be swapped.
-bool isSolderedCpu(Cpu c) =>
-    c.socket.startsWith('BGA') ||
-    c.socket.startsWith('FP') ||
-    c.socket.startsWith('FL');
-
-/// Laptop GPUs are modelled with length 0 (built into the chassis).
-bool isLaptopGpu(Gpu g) => g.lengthMm == 0;
-
 class GeneralUpgradeOption {
   const GeneralUpgradeOption({
     required this.part,

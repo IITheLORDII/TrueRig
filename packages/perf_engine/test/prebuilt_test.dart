@@ -43,6 +43,26 @@ void main() {
       expect(g770.variants.every((v) => v.year != null), isTrue);
     });
 
+    test('laptops come with laptop (SO-DIMM) memory', () {
+      for (final s in kPrebuilts.where((s) => s.isLaptop)) {
+        for (final v in s.variants) {
+          final ram = catalog.byId(v.ramId);
+          expect(ram, isA<Ram>(), reason: '${s.id} ${v.ramId}');
+          expect((ram! as Ram).formFactor, RamFormFactor.sodimm,
+              reason: '${s.id} ${v.ramId}');
+        }
+      }
+    });
+
+    test('a laptop listing picks SO-DIMM; DDR3 is understood', () {
+      final laptop =
+          p.parse('Casper Excalibur G770 i5 12450H 16GB RAM RTX3050');
+      expect(laptop.ram?.formFactor, RamFormFactor.sodimm);
+      final old = p.parse('Intel Core i7-4790K 8GB DDR3 GTX 1050 Ti');
+      expect(old.ram?.type, MemoryType.ddr3);
+      expect(old.ram?.formFactor, RamFormFactor.dimm);
+    });
+
     test('every model lists its generations with a year', () {
       for (final s in kPrebuilts) {
         expect(s.variants.length, greaterThanOrEqualTo(3), reason: s.id);

@@ -25,6 +25,15 @@ PrebuiltVariant _v(int year, String cpu, String gpu, String ram,
         [String? code]) =>
     PrebuiltVariant(cpuId: cpu, gpuId: gpu, ramId: ram, year: year, code: code);
 
+/// Laptops use SO-DIMM modules: 'ram-ddr4-…' becomes 'ram-so-ddr4-…'.
+PrebuiltVariant _soDimm(PrebuiltVariant v) => PrebuiltVariant(
+      cpuId: v.cpuId,
+      gpuId: v.gpuId,
+      ramId: v.ramId.replaceFirst('ram-', 'ram-so-'),
+      year: v.year,
+      code: v.code,
+    );
+
 PrebuiltSystem _laptop(
         String id, String brand, String model, List<PrebuiltVariant> variants,
         {List<String> aliases = const []}) =>
@@ -33,7 +42,7 @@ PrebuiltSystem _laptop(
       brand: brand,
       model: model,
       isLaptop: true,
-      variants: variants,
+      variants: [for (final v in variants) _soDimm(v)],
       aliases: aliases,
     );
 

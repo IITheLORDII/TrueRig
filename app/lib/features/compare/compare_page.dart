@@ -91,9 +91,9 @@ class _ComparePageState extends ConsumerState<ComparePage> {
       if (picked != null) setState(() => _otherPc = picked);
       return;
     }
-    final cpu = await context.push<Part>('/pick/part/cpu?mode=return');
+    final cpu = await context.push<Part>('/pick/part/cpu?mode=return&for=none');
     if (!mounted || cpu is! Cpu) return;
-    final gpu = await context.push<Part>('/pick/part/gpu?mode=return');
+    final gpu = await context.push<Part>('/pick/part/gpu?mode=return&for=none');
     if (!mounted || gpu is! Gpu) return;
     // Same RAM as the user's PC keeps the comparison about CPU + GPU.
     var build = PcBuild(cpu: cpu, gpu: gpu);

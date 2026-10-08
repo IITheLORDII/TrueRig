@@ -122,8 +122,10 @@ class CompatibilityChecker {
 
   Iterable<CompatibilityIssue> _memory(PcBuild b) sync* {
     final ram = b.ram;
+    if (ram == null) return;
+    yield* _memoryFit(b, ram);
     final mb = b.motherboard;
-    if (ram == null || mb == null) return;
+    if (mb == null) return;
     if (ram.type != mb.memoryType) {
       yield CompatibilityIssue(
         code: 'ram_type_mismatch',
@@ -158,6 +160,56 @@ class CompatibilityChecker {
         severity: IssueSeverity.warning,
         message: 'Tek modül tek kanal çalışır; oyunlarda %10-20 FPS kaybı '
             'olabilir. 2 modüllü kit önerilir.',
+        involved: [PartCategory.ram],
+      );
+    }
+  }
+
+  /// Rules that need no motherboard: memory type vs processor and module
+  /// size (laptop SO-DIMM vs desktop DIMM).
+  Iterable<CompatibilityIssue> _memoryFit(PcBuild b, Ram ram) sync* {
+    final cpu = b.cpu;
+    final type = ram.type.name.toUpperCase();
+    // With a board, ram_type_mismatch / cpu_board_memory already cover it.
+    if (cpu != null &&
+        b.motherboard == null &&
+        !cpu.memoryTypes.contains(ram.type)) {
+      final supported =
+          cpu.memoryTypes.map((t) => t.name.toUpperCase()).join(' ve ');
+      yield CompatibilityIssue(
+        code: 'ram_cpu_type',
+        severity: IssueSeverity.error,
+        message: '${cpu.model} yalnızca $supported destekler; seçilen bellek '
+            '$type. Bu ikisi birlikte çalışmaz.',
+        involved: const [PartCategory.ram, PartCategory.cpu],
+      );
+    }
+    final laptop = isLaptopBuild(cpu, b.gpu);
+    final desktop = b.motherboard != null ||
+        (cpu != null && !isSolderedCpu(cpu)) ||
+        (b.gpu != null && !isLaptopGpu(b.gpu!));
+    if (laptop && ram.formFactor == RamFormFactor.dimm) {
+      yield const CompatibilityIssue(
+        code: 'ram_form_laptop',
+        severity: IssueSeverity.error,
+        message: 'Dizüstü bilgisayarlar küçük SO-DIMM bellek kullanır; '
+            'masaüstü (DIMM) modül takılmaz.',
+        involved: [PartCategory.ram],
+      );
+    } else if (!laptop && desktop && ram.formFactor != RamFormFactor.dimm) {
+      yield const CompatibilityIssue(
+        code: 'ram_form_desktop',
+        severity: IssueSeverity.error,
+        message: 'Masaüstü anakartlar DIMM bellek kullanır; dizüstü '
+            '(SO-DIMM / lehimli) bellek takılmaz.',
+        involved: [PartCategory.ram],
+      );
+    }
+    if (ram.formFactor == RamFormFactor.soldered) {
+      yield const CompatibilityIssue(
+        code: 'ram_soldered',
+        severity: IssueSeverity.info,
+        message: 'Bu bellek anakarta lehimli; sonradan yükseltilemez.',
         involved: [PartCategory.ram],
       );
     }

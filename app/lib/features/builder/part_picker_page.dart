@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/features/sandbox/sandbox_state.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
@@ -18,12 +19,17 @@ class PartPickerPage extends ConsumerStatefulWidget {
     super.key,
     required this.category,
     this.returnMode = false,
+    this.against,
   });
 
   final PartCategory category;
 
   /// Pop with the chosen part (comparison) instead of editing the build.
   final bool returnMode;
+
+  /// Build the choice is checked against: null = the user's own PC,
+  /// 'sandbox0' / 'sandbox1' = a scratch-area PC, 'none' = nothing.
+  final String? against;
 
   @override
   ConsumerState<PartPickerPage> createState() => _PartPickerPageState();
@@ -42,7 +48,12 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
   @override
   Widget build(BuildContext context) {
     final catalog = ref.watch(catalogProvider);
-    final build = ref.watch(buildProvider);
+    final PcBuild build = switch (widget.against) {
+      'none' => const PcBuild(),
+      'sandbox0' => ref.watch(sandboxProvider).pcs[0].build,
+      'sandbox1' => ref.watch(sandboxProvider).pcs[1].build,
+      _ => ref.watch(buildProvider),
+    };
     final parts = _query.trim().isEmpty
         ? catalog.byCategory(widget.category)
         : catalog.search(_query, category: widget.category, limit: 100);
@@ -74,7 +85,12 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
                       row: rows[i],
                       selected:
                           build.partFor(widget.category)?.id == rows[i].part.id,
-                      onTap: () {
+                      onTap: () async {
+                        if (rows[i].errors.isNotEmpty &&
+                            !await _confirmIncompatible(rows[i])) {
+                          return;
+                        }
+                        if (!context.mounted) return;
                         if (widget.returnMode) {
                           context.pop(rows[i].part);
                           return;
@@ -94,6 +110,30 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
     );
   }
 
+  /// Incompatible parts stay selectable (people compare on purpose), but
+  /// only after saying why they will not work together.
+  Future<bool> _confirmIncompatible(_Row row) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.warning_rounded, color: ctx.palette.bad, size: 36),
+        title: const Text('Bu parça uyumsuz'),
+        content: Text(row.errors.join('\n\n')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yine de seç'),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
+  }
+
   List<_Row> _rank(List<Part> parts, PcBuild build) {
     const checker = CompatibilityChecker();
     final rows = [
@@ -106,6 +146,7 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
               .where(
                 (i) =>
                     i.severity == IssueSeverity.error &&
+                    !_incompleteBuild.contains(i.code) &&
                     i.involved.contains(widget.category),
               )
               .map((i) => i.message)
@@ -119,6 +160,10 @@ class _PartPickerPageState extends ConsumerState<PartPickerPage> {
     ];
   }
 }
+
+/// Errors about a part that is simply not chosen yet (e.g. a CPU without
+/// graphics before the graphics card is picked): not an incompatibility.
+const _incompleteBuild = {'no_display_output'};
 
 class _Row {
   const _Row(this.part, this.errors);

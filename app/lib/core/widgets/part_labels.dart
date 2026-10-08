@@ -35,8 +35,12 @@ String partSubtitle(Part p) => switch (p) {
     '${m.socket} · ${m.chipset} · '
         '${m.memoryType.name.toUpperCase()} · ${_ff(m.formFactor)}',
   Ram r =>
-    '${r.totalGb} GB · ${r.type.name.toUpperCase()}-${r.speedMts} '
-        '· CL${r.casLatency}',
+    '${r.totalGb} GB · ${r.type.name.toUpperCase()}-${r.speedMts} · '
+        '${switch (r.formFactor) {
+          RamFormFactor.dimm => 'Masaüstü (DIMM)',
+          RamFormFactor.sodimm => 'Dizüstü (SO-DIMM)',
+          RamFormFactor.soldered => 'Lehimli',
+        }}${r.casLatency > 0 ? ' · CL${r.casLatency}' : ''}',
   Psu s => '${s.watts} W · ${s.rating}${s.has12vhpwr ? ' · 12V-2x6' : ''}',
   PcCase c =>
     'GPU ≤ ${c.maxGpuLengthMm} mm · '

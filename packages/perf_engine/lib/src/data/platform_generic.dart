@@ -59,6 +59,12 @@ class _Chipset {
 }
 
 const _chipsets = [
+  _Chipset('LGA1155', 'B75', MemoryType.ddr3, 1600, 0, 3, 50),
+  _Chipset('LGA1155', 'Z77', MemoryType.ddr3, 2400, 0, 3, 70),
+  _Chipset('LGA1150', 'H81', MemoryType.ddr3, 1600, 0, 2, 45),
+  _Chipset('LGA1150', 'B85', MemoryType.ddr3, 1600, 0, 3, 55),
+  _Chipset('LGA1150', 'Z97', MemoryType.ddr3, 3200, 1, 3, 80),
+  _Chipset('AM3+', '970', MemoryType.ddr3, 2133, 0, 2, 55),
   _Chipset('LGA1151', 'B360', MemoryType.ddr4, 2666, 1, 3, 80),
   _Chipset('LGA1151', 'Z390', MemoryType.ddr4, 4266, 2, 3, 150),
   _Chipset('LGA1200', 'B560', MemoryType.ddr4, 4400, 2, 4, 110),
@@ -130,33 +136,74 @@ final List<Motherboard> kGenericBoards = List.unmodifiable([
       ),
 ]);
 
+Ram _kit(MemoryType type, int speed, int count, int size, RamFormFactor ff) {
+  final so = ff == RamFormFactor.sodimm;
+  final perGb = switch (type) {
+    MemoryType.ddr5 => 3.2,
+    MemoryType.ddr4 => 2.2,
+    MemoryType.ddr3 => 1.6,
+  };
+  return Ram(
+    id: 'ram-${so ? 'so-' : ''}${type.name}-$speed-${count}x$size',
+    brand: 'Genel',
+    model: '${count * size}GB (${count}x$size) '
+        '${type.name.toUpperCase()}-$speed${so ? ' SO-DIMM' : ''}',
+    refPriceUsd: perGb * count * size,
+    type: type,
+    speedMts: speed,
+    moduleCount: count,
+    moduleSizeGb: size,
+    casLatency: switch (type) {
+      MemoryType.ddr5 => speed >= 6000 ? 30 : 40,
+      MemoryType.ddr4 => so ? 22 : 16,
+      MemoryType.ddr3 => 11,
+    },
+    formFactor: ff,
+  );
+}
+
+/// Desktop (DIMM) and laptop (SO-DIMM) kits for every common size / speed.
 final List<Ram> kGenericRams = List.unmodifiable([
-  for (final (type, speeds, kits) in [
+  for (final (type, speeds, kits, ff) in [
+    (
+      MemoryType.ddr3,
+      [1600],
+      [(1, 4), (2, 4), (1, 8), (2, 8)],
+      RamFormFactor.dimm,
+    ),
     (
       MemoryType.ddr4,
       [2666, 3200, 3600],
-      [(1, 8), (2, 8), (1, 16), (2, 16), (2, 32)]
+      [(1, 8), (2, 8), (1, 16), (2, 16), (2, 32)],
+      RamFormFactor.dimm,
     ),
     (
       MemoryType.ddr5,
       [4800, 5600, 6000, 6400, 7200],
-      [(2, 8), (1, 16), (2, 16), (2, 24), (2, 32), (2, 48)]
+      [(2, 8), (1, 16), (2, 16), (2, 24), (2, 32), (2, 48)],
+      RamFormFactor.dimm,
+    ),
+    (
+      MemoryType.ddr3,
+      [1600],
+      [(1, 4), (2, 4), (1, 8), (2, 8)],
+      RamFormFactor.sodimm,
+    ),
+    (
+      MemoryType.ddr4,
+      [2666, 3200],
+      [(1, 8), (2, 8), (1, 16), (2, 16), (2, 32)],
+      RamFormFactor.sodimm,
+    ),
+    (
+      MemoryType.ddr5,
+      [4800, 5600, 6400],
+      [(1, 8), (2, 8), (1, 16), (2, 16), (2, 32)],
+      RamFormFactor.sodimm,
     ),
   ])
     for (final speed in speeds)
-      for (final (count, size) in kits)
-        Ram(
-          id: 'ram-${type.name}-$speed-${count}x$size',
-          brand: 'Genel',
-          model: '${count * size}GB (${count}x$size) '
-              '${type.name.toUpperCase()}-$speed',
-          refPriceUsd: (type == MemoryType.ddr5 ? 3.2 : 2.2) * count * size,
-          type: type,
-          speedMts: speed,
-          moduleCount: count,
-          moduleSizeGb: size,
-          casLatency: type == MemoryType.ddr5 ? (speed >= 6000 ? 30 : 40) : 16,
-        ),
+      for (final (count, size) in kits) _kit(type, speed, count, size, ff),
 ]);
 
 final List<Psu> kGenericPsus = List.unmodifiable([

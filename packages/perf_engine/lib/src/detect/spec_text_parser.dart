@@ -44,10 +44,10 @@ class SpecTextParser {
   );
 
   static final _ramPattern = RegExp(
-    r'(\d{1,3})\s*gb\s*(?:ram|ddr\s*([45])|bellek)',
+    r'(\d{1,3})\s*gb\s*(?:ram|ddr\s*([345])|bellek)',
     caseSensitive: false,
   );
-  static final _ddrPattern = RegExp(r'ddr\s*([45])', caseSensitive: false);
+  static final _ddrPattern = RegExp(r'ddr\s*([345])', caseSensitive: false);
   static final _speedPattern = RegExp(
     r'(\d{4})\s*(?:mhz|mt/s)',
     caseSensitive: false,
@@ -67,12 +67,12 @@ class SpecTextParser {
     return ParsedSpec(
       cpu: cpu,
       gpu: gpu,
-      ram: _ram(text, cpu),
+      ram: _ram(text, cpu, isLaptop: isLaptop),
       isLaptop: isLaptop,
     );
   }
 
-  Ram? _ram(String text, Cpu? cpu) {
+  Ram? _ram(String text, Cpu? cpu, {required bool isLaptop}) {
     final m = _ramPattern.firstMatch(text);
     if (m == null) return null;
     final total = int.parse(m.group(1)!);
@@ -81,26 +81,42 @@ class SpecTextParser {
     final type = switch (ddr) {
       '5' => MemoryType.ddr5,
       '4' => MemoryType.ddr4,
+      '3' => MemoryType.ddr3,
       _ => cpu != null && !cpu.memoryTypes.contains(MemoryType.ddr4)
           ? MemoryType.ddr5
           : MemoryType.ddr4,
     };
     final speed = int.tryParse(_speedPattern.firstMatch(text)?.group(1) ?? '');
-    return nearestGenericRam(catalog, type, total, speed);
+    final laptop = isLaptop || (cpu != null && isSolderedCpu(cpu));
+    return nearestGenericRam(
+      catalog,
+      type,
+      total,
+      speed,
+      formFactor: laptop ? RamFormFactor.sodimm : RamFormFactor.dimm,
+    );
   }
 }
 
-/// Closest generic RAM kit: same type and capacity (prefer dual channel),
-/// nearest speed (default: 3200 DDR4 / 4800 DDR5).
+/// Closest generic RAM kit: same type, module size (laptop SO-DIMM or
+/// desktop DIMM) and capacity (prefer dual channel), nearest speed
+/// (default: 1600 DDR3 / 3200 DDR4 / 4800 DDR5).
 Ram? nearestGenericRam(
   PartCatalog catalog,
   MemoryType type,
   int totalGb,
-  int? speed,
-) {
-  final target = speed ?? (type == MemoryType.ddr5 ? 4800 : 3200);
+  int? speed, {
+  RamFormFactor formFactor = RamFormFactor.dimm,
+}) {
+  final target = speed ??
+      switch (type) {
+        MemoryType.ddr5 => 4800,
+        MemoryType.ddr4 => 3200,
+        MemoryType.ddr3 => 1600,
+      };
   final kits = catalog.rams
       .where((r) => r.id.startsWith('ram-') && r.type == type)
+      .where((r) => r.formFactor == formFactor)
       .where((r) => r.totalGb == totalGb)
       .toList();
   if (kits.isEmpty) return null;

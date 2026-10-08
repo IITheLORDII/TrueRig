@@ -9,7 +9,11 @@ library;
 
 enum PartCategory { cpu, gpu, motherboard, ram, psu, pcCase, cooler }
 
-enum MemoryType { ddr4, ddr5 }
+enum MemoryType { ddr3, ddr4, ddr5 }
+
+/// Physical memory module: desktop DIMM, laptop SO-DIMM, or soldered to the
+/// board (LPDDR, not upgradable). Different sizes: they never fit each other.
+enum RamFormFactor { dimm, sodimm, soldered }
 
 enum FormFactor { miniItx, microAtx, atx, eAtx }
 
@@ -160,9 +164,11 @@ class Ram extends Part {
     required this.moduleCount,
     required this.moduleSizeGb,
     required this.casLatency,
+    this.formFactor = RamFormFactor.dimm,
   });
 
   final MemoryType type;
+  final RamFormFactor formFactor;
   final int speedMts;
   final int moduleCount;
   final int moduleSizeGb;
@@ -240,3 +246,16 @@ class Cooler extends Part {
   @override
   PartCategory get category => PartCategory.cooler;
 }
+
+/// Laptop / BGA CPUs (Intel BGA*, AMD FP*/FL*) cannot be swapped.
+bool isSolderedCpu(Cpu c) =>
+    c.socket.startsWith('BGA') ||
+    c.socket.startsWith('FP') ||
+    c.socket.startsWith('FL');
+
+/// Laptop GPUs are modelled with length 0 (built into the chassis).
+bool isLaptopGpu(Gpu g) => g.lengthMm == 0;
+
+/// A laptop build: soldered processor or built-in laptop graphics.
+bool isLaptopBuild(Cpu? cpu, Gpu? gpu) =>
+    (cpu != null && isSolderedCpu(cpu)) || (gpu != null && isLaptopGpu(gpu));

@@ -62,8 +62,11 @@ GoRouter createRouter() => GoRouter(
       path: '/pick/part/:category',
       parentNavigatorKey: _rootKey,
       redirect: (_, s) => _categoryFrom(s) == null ? '/home' : null,
-      builder: (_, s) =>
-          PartPickerPage(category: _categoryFrom(s)!, returnMode: _returns(s)),
+      builder: (_, s) => PartPickerPage(
+        category: _categoryFrom(s)!,
+        returnMode: _returns(s),
+        against: s.uri.queryParameters['for'],
+      ),
     ),
     _page(
       '/pick/phone',

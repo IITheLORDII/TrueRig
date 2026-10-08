@@ -1,5 +1,6 @@
 import 'package:perf_engine/src/models/parts.dart';
 
+const _d3 = [MemoryType.ddr3];
 const _d4 = [MemoryType.ddr4];
 const _d5 = [MemoryType.ddr5];
 const _d45 = [MemoryType.ddr4, MemoryType.ddr5];
@@ -43,6 +44,17 @@ Cpu _c(
 /// Additional desktop + laptop CPUs (same scales as cpu_catalog.dart).
 final List<Cpu> kMoreCpus = List.unmodifiable([
   // ---- Intel desktop 8th-11th gen ----
+  // ---- DDR3 era (2012-2014) ----
+  _c('i5-3470', 'Intel', 'Core i5-3470', 'LGA1155', 4, 4, 3.6, 77, 77, 30, 10,
+      33, _d3, 3, true, 184),
+  _c('i7-3770k', 'Intel', 'Core i7-3770K', 'LGA1155', 4, 8, 3.9, 77, 77, 33, 13,
+      36, _d3, 3, true, 313),
+  _c('i5-4460', 'Intel', 'Core i5-4460', 'LGA1150', 4, 4, 3.4, 84, 84, 32, 11,
+      35, _d3, 3, true, 182),
+  _c('i7-4790k', 'Intel', 'Core i7-4790K', 'LGA1150', 4, 8, 4.4, 88, 88, 40, 16,
+      44, _d3, 3, true, 339),
+  _c('fx-8350', 'AMD', 'FX-8350', 'AM3+', 8, 8, 4.2, 125, 125, 22, 14, 28, _d3,
+      2, false, 199),
   _c('i3-8100', 'Intel', 'Core i3-8100', 'LGA1151', 4, 4, 3.6, 65, 65, 40, 12,
       42, _d4, 3, true, 117),
   _c('i5-8400', 'Intel', 'Core i5-8400', 'LGA1151', 6, 6, 4.0, 65, 65, 45, 18,
