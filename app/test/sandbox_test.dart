@@ -42,7 +42,7 @@ void main() {
 
   testWidgets('compare two phones in the scratch area', (tester) async {
     await pumpApp(tester);
-    await tap(tester, find.widgetWithText(OutlinedButton, 'Karşılaştır'));
+    await tap(tester, find.widgetWithText(FilledButton, 'Karşılaştır'));
     await tapText(tester, 'Telefon');
     await tap(tester, find.text('Seç').first);
     await search(tester, 'iPhone 15');
