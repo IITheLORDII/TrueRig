@@ -395,6 +395,11 @@ class _More extends ConsumerWidget {
       child: Column(
         children: [
           item(
+            Icons.shopping_cart_rounded,
+            'PC topla, en ucuz sepeti hazırla',
+            () => context.push('/sandbox?tab=pc'),
+          ),
+          item(
             Icons.laptop_chromebook_rounded,
             'Hazır bilgisayar / laptop seç',
             () => context.push('/pick/prebuilt'),

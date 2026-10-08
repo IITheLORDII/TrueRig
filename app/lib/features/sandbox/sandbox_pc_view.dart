@@ -105,6 +105,12 @@ class SandboxPcEditor extends ConsumerWidget {
                 onTap: () => _pickPart(context, ref, c),
               );
             }(),
+          if (pc.build.parts.isNotEmpty)
+            OutlinedButton.icon(
+              onPressed: () => context.push('/cart?src=sandbox'),
+              icon: const Icon(Icons.shopping_cart_rounded),
+              label: const Text('Sepeti hazırla: nereden en ucuza?'),
+            ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
+import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/images/part_images.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
@@ -94,6 +95,15 @@ class PcPanel extends ConsumerWidget {
                   label: const Text('Darboğazı Analiz Et'),
                 ),
         ),
+        if (build.parts.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: Space.s),
+            child: OutlinedButton.icon(
+              onPressed: () => context.push('/cart'),
+              icon: const Icon(Icons.shopping_cart_rounded),
+              label: const Text('Sepeti hazırla: nereden en ucuza?'),
+            ),
+          ),
       ],
     );
   }

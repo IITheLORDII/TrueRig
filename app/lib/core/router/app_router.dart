@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:darbogaz/features/cart/cart_page.dart';
 import 'package:darbogaz/features/onboarding/onboarding_page.dart';
 import 'package:darbogaz/core/devices.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
@@ -69,6 +70,10 @@ GoRouter createRouter() => GoRouter(
     ),
     _page('/pick/watch', (s) => WatchPickerPage(returnMode: _returns(s))),
     _page('/pick/prebuilt', (s) => PrebuiltPickerPage(returnMode: _returns(s))),
+    _page(
+      '/cart',
+      (s) => CartPage(fromSandbox: s.uri.queryParameters['src'] == 'sandbox'),
+    ),
     _page(
       '/sandbox',
       (s) => SandboxPage(
