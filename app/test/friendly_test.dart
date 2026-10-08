@@ -30,6 +30,37 @@ void main() {
     expect(find.text('Oyunlarda ~70 FPS.'), findsOneWidget);
   });
 
+  testWidgets('a question button is read on its own by screen readers', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark(),
+        home: const Scaffold(
+          body: Card(
+            child: Column(
+              children: [
+                Text('En uygun'),
+                Explain(question: 'Neden bu önerildi?', answer: 'Hızlı.'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Neden bu önerildi?')),
+      matchesSemantics(
+        label: 'Neden bu önerildi?',
+        isButton: true,
+        hasExpandedState: true,
+        hasTapAction: true,
+      ),
+    );
+    handle.dispose();
+  });
+
   testWidgets('inner pages keep the back arrow and the bottom menu', (
     tester,
   ) async {

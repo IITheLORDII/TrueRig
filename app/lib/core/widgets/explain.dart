@@ -46,6 +46,8 @@ class Explain extends StatefulWidget {
 class _ExplainState extends State<Explain> {
   late bool _open = widget.initiallyOpen;
 
+  void _toggle() => setState(() => _open = !_open);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -60,11 +62,15 @@ class _ExplainState extends State<Explain> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Semantics(
+            container: true,
             button: true,
             expanded: _open,
+            label: widget.question,
+            excludeSemantics: true,
+            onTap: _toggle,
             child: InkWell(
               borderRadius: BorderRadius.circular(Radii.m),
-              onTap: () => setState(() => _open = !_open),
+              onTap: _toggle,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minHeight: kMinTap),
                 child: Padding(
