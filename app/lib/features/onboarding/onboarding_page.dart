@@ -93,22 +93,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     icon: Icons.verified_rounded,
                     title: 'TrueRig ne yapar?',
                     lines: [
-                      'Bilgisayarın, telefonun ya da saatin hangi oyun ve '
-                          'programları rahat çalıştırır, söyler.',
-                      'İki cihazı yan yana koyup hangisinin daha iyi '
-                          'olduğunu gösterir.',
-                      'Bir parçayı ya da modeli en ucuza nereden '
-                          'alabileceğini bulur.',
+                      'Cihazın oyunları kaldırır mı, söyler.',
+                      'İki cihazı karşılaştırır.',
+                      'En ucuz fiyatı bulur.',
                     ],
                   ),
                   _TourPage(
                     icon: Icons.speed_rounded,
                     title: 'Darboğaz nedir?',
                     lines: const [
-                      'Bir parçanın diğerini yavaşlatmasıdır. Güçlü bir '
-                          'ekran kartı, zayıf bir işlemciyle tam gücünü '
-                          'kullanamaz.',
-                      'Renkler her yerde aynı anlama gelir:',
+                      'Bir parça, diğerini yavaşlatır.',
+                      'Yeşil iyi, sarı orta, kırmızı kötü.',
                     ],
                     extra: Padding(
                       padding: const EdgeInsets.only(top: Space.m),
@@ -183,10 +178,28 @@ class _TourPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: Space.l),
+        // One short sentence per line, easy to scan.
         for (final l in lines)
           Padding(
             padding: const EdgeInsets.only(bottom: Space.m),
-            child: Text(l, style: theme.textTheme.bodyLarge),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.check_circle_rounded,
+                  size: 22,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: Space.m),
+                Expanded(
+                  child: Text(
+                    l,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ?extra,
       ],
@@ -216,8 +229,7 @@ class _ChooseDevice extends StatelessWidget {
         ),
         const SizedBox(height: Space.s),
         Text(
-          'Birini seç, birlikte ekleyelim. Sonra diğerlerini de '
-          'ekleyebilirsin.',
+          'Birini seç, ekleyelim.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyLarge,
         ),
