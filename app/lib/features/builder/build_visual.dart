@@ -6,7 +6,7 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
-import 'package:darbogaz/core/widgets/part_labels.dart';
+import 'package:darbogaz/features/builder/pc_case_painter.dart';
 
 /// Picture of the user's computer at the top of "Bilgisayarım": each chosen
 /// part drops into a desktop case, or a laptop opens with the TrueRig mark
@@ -29,7 +29,7 @@ class BuildVisual extends StatefulWidget {
   State<BuildVisual> createState() => _BuildVisualState();
 }
 
-/// Order parts settle in when several arrive at once (ready-made system).
+/// Parts listed in the screen reader sentence, in this order.
 const _order = [
   PartCategory.pcCase,
   PartCategory.motherboard,
@@ -48,8 +48,6 @@ const _core = [
   PartCategory.ram,
 ];
 
-const _stagger = Duration(milliseconds: 120);
-
 String _name(PartCategory c) => switch (c) {
   PartCategory.cpu => 'işlemci',
   PartCategory.gpu => 'ekran kartı',
@@ -61,31 +59,6 @@ String _name(PartCategory c) => switch (c) {
 };
 
 class _BuildVisualState extends State<BuildVisual> {
-  /// Delay before each newly added part starts to fall.
-  Map<PartCategory, Duration> _delays = const {};
-
-  @override
-  void initState() {
-    super.initState();
-    _delays = _stagger0(_order.where((c) => widget.build.partFor(c) != null));
-  }
-
-  @override
-  void didUpdateWidget(BuildVisual old) {
-    super.didUpdateWidget(old);
-    final added = _order.where(
-      (c) =>
-          widget.build.partFor(c) != null &&
-          widget.build.partFor(c)?.id != old.build.partFor(c)?.id,
-    );
-    _delays = _stagger0(added);
-  }
-
-  static Map<PartCategory, Duration> _stagger0(Iterable<PartCategory> cats) {
-    var i = 0;
-    return {for (final c in cats) c: _stagger * i++};
-  }
-
   String _semantics() {
     final b = widget.build;
     if (widget.isLaptop) {
@@ -128,16 +101,12 @@ class _BuildVisualState extends State<BuildVisual> {
       child: Column(
         children: [
           SizedBox(
-            height: 170,
+            height: 200,
             child: AnimatedSwitcher(
               duration: _motion(context, Motion.normal),
               child: widget.isLaptop
                   ? _Laptop(key: const ValueKey('laptop'), pc: widget.build)
-                  : _Desktop(
-                      key: const ValueKey('desktop'),
-                      pc: widget.build,
-                      delays: _delays,
-                    ),
+                  : _Desktop(key: const ValueKey('desktop'), pc: widget.build),
             ),
           ),
           const SizedBox(height: Space.s),
@@ -162,397 +131,139 @@ Duration _motion(BuildContext context, Duration d) =>
 
 // ------------------------------------------------------------ desktop --
 
-/// Where each part sits inside the case (fractions of the case box).
-const _slots = <PartCategory, Rect>{
-  PartCategory.motherboard: Rect.fromLTWH(0.07, 0.08, 0.60, 0.60),
-  PartCategory.cpu: Rect.fromLTWH(0.26, 0.18, 0.16, 0.18),
-  PartCategory.cooler: Rect.fromLTWH(0.24, 0.15, 0.20, 0.24),
-  PartCategory.ram: Rect.fromLTWH(0.48, 0.13, 0.12, 0.30),
-  PartCategory.gpu: Rect.fromLTWH(0.07, 0.50, 0.70, 0.13),
-  PartCategory.psu: Rect.fromLTWH(0.07, 0.76, 0.52, 0.16),
-};
+/// Parts drawn inside the case (the case itself only changes the shell).
+const _inside = [
+  PartCategory.motherboard,
+  PartCategory.cpu,
+  PartCategory.cooler,
+  PartCategory.ram,
+  PartCategory.gpu,
+  PartCategory.psu,
+];
 
-class _Desktop extends StatelessWidget {
-  const _Desktop({super.key, required this.pc, required this.delays});
+/// Tower seen from the front-left; each newly chosen part moves into its
+/// place (graphics card and power supply slide in through the glass side,
+/// RAM drops into its slots). Parts arriving together go one after another.
+class _Desktop extends StatefulWidget {
+  const _Desktop({super.key, required this.pc});
 
   final PcBuild pc;
-  final Map<PartCategory, Duration> delays;
 
   @override
-  Widget build(BuildContext context) {
-    final hasCase = pc.pcCase != null;
-    return Center(
-      child: AspectRatio(
-        aspectRatio: 1.25,
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final size = box.biggest;
-            Rect place(Rect f) => Rect.fromLTWH(
-              f.left * size.width,
-              f.top * size.height,
-              f.width * size.width,
-              f.height * size.height,
-            );
-            return Stack(
-              children: [
-                Positioned.fill(
-                  child: _Glow(
-                    on: hasCase,
-                    delay: delays[PartCategory.pcCase] ?? Duration.zero,
-                    child: CustomPaint(
-                      painter: _CasePainter(
-                        body: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHigh,
-                        glass: Color.alphaBlend(
-                          Theme.of(context).colorScheme.primary
-                              .withValues(alpha: 0.06),
-                          context.palette.surfaceAlt,
-                        ),
-                        edge: context.palette.outline,
-                        branded: hasCase,
-                      ),
-                    ),
-                  ),
-                ),
-                for (final c in [
-                  PartCategory.motherboard,
-                  PartCategory.psu,
-                  PartCategory.gpu,
-                  PartCategory.ram,
-                  PartCategory.cpu,
-                  PartCategory.cooler,
-                ])
-                  Positioned.fromRect(
-                    rect: place(_slots[c]!),
-                    child: AnimatedSwitcher(
-                      duration: _motion(context, Motion.fast),
-                      // Fill the slot (the default layout would shrink
-                      // empty outlines and RAM sticks to nothing).
-                      layoutBuilder: (current, previous) => Stack(
-                        fit: StackFit.expand,
-                        children: [...previous, ?current],
-                      ),
-                      child: switch (pc.partFor(c)) {
-                        final Part p => _Drop(
-                          key: ValueKey('${c.name}-${p.id}'),
-                          delay: delays[c] ?? Duration.zero,
-                          child: _PartPiece(category: c),
-                        ),
-                        // The cooler is optional and sits over the CPU.
-                        null when c == PartCategory.cooler =>
-                          const SizedBox.shrink(),
-                        null => _Ghost(key: ValueKey('ghost-${c.name}')),
-                      },
-                    ),
-                  ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
+  State<_Desktop> createState() => _DesktopState();
 }
 
-/// Falls from above and settles with a small bounce.
-class _Drop extends StatelessWidget {
-  const _Drop({super.key, required this.delay, required this.child});
+class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
+  static const _fall = Duration(milliseconds: 700);
 
-  final Duration delay;
-  final Widget child;
+  final _moves = <PartCategory, AnimationController>{};
 
-  @override
-  Widget build(BuildContext context) {
-    final fall = _motion(context, Motion.slow);
-    final total = fall == Duration.zero ? Duration.zero : fall + delay;
-    final start = total == Duration.zero
-        ? 0.0
-        : delay.inMilliseconds / total.inMilliseconds;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: total,
-      curve: Interval(start, 1),
-      builder: (context, t, child) {
-        final y = Curves.easeOutBack.transform(t);
-        return Opacity(
-          opacity: Curves.easeOut.transform(t).clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, (1 - y) * -70),
-            child: child,
-          ),
-        );
-      },
-      child: child,
-    );
-  }
-}
-
-/// Brief brand glow when [on] turns true (the case being chosen).
-class _Glow extends StatelessWidget {
-  const _Glow({required this.on, required this.delay, required this.child});
-
-  final bool on;
-  final Duration delay;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (!on) return child;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: _motion(context, Motion.slow),
-      builder: (context, t, child) => DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(Radii.l),
-          boxShadow: [
-            BoxShadow(
-              color: kBrandCyan.withValues(alpha: 0.35 * math.sin(math.pi * t)),
-              blurRadius: 24,
-            ),
-          ],
-        ),
-        child: child,
-      ),
-      child: child,
-    );
-  }
-}
-
-/// One part as a coloured block with its icon.
-class _PartPiece extends StatelessWidget {
-  const _PartPiece({required this.category});
-
-  final PartCategory category;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final scheme = Theme.of(context).colorScheme;
-    final (Color a, Color b) = switch (category) {
-      PartCategory.motherboard => (
-        const Color(0xFF0E4B4F),
-        const Color(0xFF12343F),
-      ),
-      PartCategory.cpu => (scheme.primary, kBrandCyan),
-      PartCategory.cooler => (p.accentAlt, kBrandViolet),
-      PartCategory.ram => (p.good, const Color(0xFF14915F)),
-      PartCategory.gpu => (kBrandViolet, p.accentAlt),
-      PartCategory.psu => (const Color(0xFF3A4256), const Color(0xFF262C3B)),
-      PartCategory.pcCase => (p.muted, p.muted),
-    };
-    if (category == PartCategory.ram) return _RamSticks(a: a, b: b);
-    if (category == PartCategory.cooler) return _Fan(color: a);
-    return LayoutBuilder(
-      builder: (context, box) => DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [a, b]),
-          borderRadius: BorderRadius.circular(Radii.s - 2),
-          boxShadow: [
-            BoxShadow(color: a.withValues(alpha: 0.35), blurRadius: 8),
-          ],
-        ),
-        child: Center(
-          child: Icon(
-            category.icon,
-            size: (box.biggest.shortestSide * 0.6).clamp(10, 28),
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RamSticks extends StatelessWidget {
-  const _RamSticks({required this.a, required this.b});
-
-  final Color a;
-  final Color b;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      for (var i = 0; i < 2; i++) ...[
-        if (i > 0) const SizedBox(width: 3),
-        Expanded(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [a, b],
-              ),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        ),
-      ],
-    ],
+  /// Share of each controller spent waiting (staggered arrivals).
+  final _waits = <PartCategory, double>{};
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: Motion.slow,
   );
-}
 
-/// CPU cooler fan: spins once as it lands.
-class _Fan extends StatelessWidget {
-  const _Fan({required this.color});
-
-  final Color color;
+  bool get _still => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
   @override
-  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
-    tween: Tween(begin: 0, end: 1),
-    duration: _motion(context, const Duration(milliseconds: 1200)),
-    curve: Curves.easeOutCubic,
-    builder: (context, t, child) =>
-        Transform.rotate(angle: t * 4 * math.pi, child: child),
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color.withValues(alpha: 0.25),
-        border: Border.all(color: color, width: 2),
-      ),
-      child: Center(
-        child: LayoutBuilder(
-          builder: (context, box) => Icon(
-            Icons.toys_rounded,
-            size: box.biggest.shortestSide * 0.7,
-            color: color,
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// Empty slot: dashed outline.
-class _Ghost extends StatelessWidget {
-  const _Ghost({super.key});
+  void initState() {
+    super.initState();
+    for (final c in _inside) {
+      _moves[c] = AnimationController(vsync: this, duration: _fall);
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _arrive(_inside.where((c) => widget.pc.partFor(c) != null));
+    });
+  }
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    painter: _DashedRectPainter(
-      color: context.palette.muted.withValues(alpha: 0.55),
-    ),
-  );
-}
-
-class _DashedRectPainter extends CustomPainter {
-  const _DashedRectPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Offset.zero & size,
-          const Radius.circular(Radii.s - 2),
-        ),
-      );
-    for (final metric in path.computeMetrics()) {
-      for (var d = 0.0; d < metric.length; d += 8) {
-        canvas.drawPath(metric.extractPath(d, d + 4), paint);
+  void didUpdateWidget(_Desktop old) {
+    super.didUpdateWidget(old);
+    final added = <PartCategory>[];
+    for (final c in _inside) {
+      final now = widget.pc.partFor(c);
+      final before = old.pc.partFor(c);
+      if (now == null && before != null) {
+        _still ? _moves[c]!.value = 0 : _moves[c]!.reverse();
+      } else if (now != null && now.id != before?.id) {
+        added.add(c);
       }
     }
-  }
-
-  @override
-  bool shouldRepaint(_DashedRectPainter old) => old.color != color;
-}
-
-/// Tower case seen from the glass side, with a front strip and power dot.
-class _CasePainter extends CustomPainter {
-  const _CasePainter({
-    required this.body,
-    required this.glass,
-    required this.edge,
-    required this.branded,
-  });
-
-  final Color body;
-  final Color glass;
-  final Color edge;
-  final bool branded;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final outer = RRect.fromRectAndRadius(
-      Offset.zero & size,
-      const Radius.circular(Radii.l),
-    );
-    canvas.drawRRect(outer, Paint()..color = body);
-    // Glass side panel.
-    final glassRect = Rect.fromLTWH(
-      size.width * 0.03,
-      size.height * 0.04,
-      size.width * 0.78,
-      size.height * 0.92,
-    );
-    final glassShape = RRect.fromRectAndRadius(
-      glassRect,
-      const Radius.circular(Radii.s),
-    );
-    canvas.drawRRect(glassShape, Paint()..color = glass);
-    // Light sheen across the glass.
-    canvas.drawRRect(
-      glassShape,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.07),
-            Colors.white.withValues(alpha: 0),
-          ],
-          stops: const [0, 0.45],
-        ).createShader(glassRect),
-    );
-    canvas.drawRRect(
-      glassShape,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..color = edge,
-    );
-    // Front strip and power button.
-    final front = Rect.fromLTWH(
-      size.width * 0.85,
-      size.height * 0.06,
-      size.width * 0.11,
-      size.height * 0.88,
-    );
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(front, const Radius.circular(Radii.s)),
-      Paint()..color = glass,
-    );
-    canvas.drawCircle(
-      Offset(front.center.dx, front.top + front.width * 0.7),
-      front.width * 0.18,
-      Paint()..color = branded ? kBrandCyan : edge,
-    );
-    // Outline: brand gradient once a case is chosen.
-    final stroke = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = branded ? 2 : 1;
-    if (branded) {
-      stroke.shader = kBrandGradient.createShader(Offset.zero & size);
-    } else {
-      stroke.color = edge;
+    _arrive(added);
+    if (widget.pc.pcCase != null &&
+        widget.pc.pcCase?.id != old.pc.pcCase?.id &&
+        !_still) {
+      _glow.forward(from: 0);
     }
-    canvas.drawRRect(outer.deflate(0.5), stroke);
+  }
+
+  void _arrive(Iterable<PartCategory> cats) {
+    var i = 0;
+    for (final c in cats) {
+      final ctl = _moves[c]!;
+      if (_still) {
+        ctl.value = 1;
+        continue;
+      }
+      final wait = Duration(milliseconds: 140 * i++);
+      ctl.duration = _fall + wait;
+      _waits[c] = wait.inMilliseconds / ctl.duration!.inMilliseconds;
+      ctl.forward(from: 0);
+    }
   }
 
   @override
-  bool shouldRepaint(_CasePainter old) =>
-      old.body != body ||
-      old.glass != glass ||
-      old.edge != edge ||
-      old.branded != branded;
+  void dispose() {
+    for (final c in _moves.values) {
+      c.dispose();
+    }
+    _glow.dispose();
+    super.dispose();
+  }
+
+  double _progress(PartCategory c) {
+    final v = _moves[c]!.value;
+    final wait = _waits[c] ?? 0;
+    if (wait <= 0 || _moves[c]!.status == AnimationStatus.reverse) return v;
+    return ((v - wait) / (1 - wait)).clamp(0.0, 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final p = context.palette;
+    final colors = CaseColors(
+      body: theme.colorScheme.surfaceContainerHigh,
+      interior: Color.alphaBlend(
+        theme.colorScheme.primary.withValues(alpha: 0.05),
+        p.surfaceAlt,
+      ),
+      glass: theme.colorScheme.primary.withValues(alpha: 0.05),
+      edge: p.muted.withValues(alpha: 0.6),
+      ghost: p.muted.withValues(alpha: 0.7),
+      cpu: kBrandCyan,
+      gpu: kBrandViolet,
+      ram: p.good,
+      cooler: p.accentAlt,
+    );
+    return SizedBox.expand(
+      child: CustomPaint(
+        painter: PcCasePainter(
+          repaint: Listenable.merge([..._moves.values, _glow]),
+          progressOf: _progress,
+          present: {
+            for (final c in _inside)
+              if (widget.pc.partFor(c) != null) c,
+          },
+          colors: colors,
+          branded: widget.pc.pcCase != null,
+          caseGlowOf: () => math.sin(math.pi * _glow.value),
+        ),
+      ),
+    );
+  }
 }
 
 // ------------------------------------------------------------- laptop --

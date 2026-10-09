@@ -6,6 +6,7 @@ import 'package:perf_engine/perf_engine.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/features/builder/build_visual.dart';
+import 'package:darbogaz/features/builder/pc_case_painter.dart';
 
 Widget _host(Widget child, {bool reduceMotion = false}) => MaterialApp(
   theme: AppTheme.dark(),
@@ -16,6 +17,12 @@ Widget _host(Widget child, {bool reduceMotion = false}) => MaterialApp(
     ),
   ),
 );
+
+PcCasePainter _painter(WidgetTester tester) => tester
+    .widgetList<CustomPaint>(find.byType(CustomPaint))
+    .map((w) => w.painter)
+    .whereType<PcCasePainter>()
+    .single;
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
@@ -30,16 +37,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Parça seçtikçe kasana yerleşecek'), findsOneWidget);
-    // Empty slots are drawn at full size (not collapsed to nothing).
-    final slots = find.descendant(
-      of: find.byType(BuildVisual),
-      matching: find.byType(CustomPaint),
-    );
-    final drawn = slots.evaluate().where((e) {
-      final size = e.size;
-      return size != null && size.width > 10 && size.height > 10;
-    });
-    expect(drawn.length, greaterThanOrEqualTo(6)); // case + 5 slots
+    // Every inside part is missing, so each gets a dashed outline.
+    expect(_painter(tester).present, isEmpty);
     expect(
       find.bySemanticsLabel('Masaüstü kasa: henüz parça yok'),
       findsOneWidget,
@@ -60,19 +59,15 @@ void main() {
         ),
       ),
     );
-    // Mid-fall the part is above its slot.
-    await tester.pump(const Duration(milliseconds: 100));
-    final midFall = tester.widget<Transform>(
-      find
-          .descendant(
-            of: find.byType(BuildVisual),
-            matching: find.byType(Transform),
-          )
-          .first,
-    );
-    expect(midFall.transform.getTranslation().y, lessThan(0));
+    // Mid-move the parts are on their way, then settle in place.
+    await tester.pump(const Duration(milliseconds: 150));
+    final mid = _painter(tester).progressOf(PartCategory.cpu);
+    expect(mid, greaterThan(0));
+    expect(mid, lessThan(1));
     await tester.pumpAndSettle();
     expect(find.text('4 ana parçadan 2 tanesi takılı'), findsOneWidget);
+    expect(_painter(tester).progressOf(PartCategory.gpu), 1);
+    expect(_painter(tester).progressOf(PartCategory.ram), 0);
     expect(
       find.bySemanticsLabel(
         'Masaüstü kasa: işlemci, ekran kartı takılı; anakart, RAM eksik',
@@ -110,6 +105,7 @@ void main() {
     );
     await tester.pump();
     expect(tester.hasRunningAnimations, isFalse);
+    expect(_painter(tester).progressOf(PartCategory.cpu), 1);
     expect(tester.takeException(), isNull);
   });
 }
