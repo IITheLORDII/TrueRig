@@ -243,10 +243,6 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
       glass: theme.colorScheme.primary.withValues(alpha: 0.05),
       edge: p.muted.withValues(alpha: 0.6),
       ghost: p.muted.withValues(alpha: 0.7),
-      cpu: kBrandCyan,
-      gpu: kBrandViolet,
-      ram: p.good,
-      cooler: p.accentAlt,
     );
     return SizedBox.expand(
       child: CustomPaint(
