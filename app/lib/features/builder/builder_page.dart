@@ -13,6 +13,7 @@ import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/part_labels.dart';
 import 'package:darbogaz/core/widgets/part_thumb.dart';
+import 'package:darbogaz/features/builder/build_visual.dart';
 
 /// Core parts are always visible; the rest sit in a collapsed section to
 /// keep the screen short.
@@ -47,6 +48,17 @@ class PcPanel extends ConsumerWidget {
     return ListView(
       padding: Insets.page,
       children: [
+        Card(
+          child: Padding(
+            padding: Insets.card,
+            child: BuildVisual(
+              build: build,
+              isLaptop: isLaptop || isLaptopBuild(build.cpu, build.gpu),
+              systemName: prebuilt?.label.split(' · ').first,
+            ),
+          ),
+        ),
+        const SizedBox(height: Space.cardGap),
         _PrebuiltCard(selection: prebuilt),
         const SizedBox(height: Space.cardGap),
         _StatusBanner(pcBuild: build, report: report, showPsu: !isLaptop),
