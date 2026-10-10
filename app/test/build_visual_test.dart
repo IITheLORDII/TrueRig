@@ -114,6 +114,27 @@ void main() {
       expect(terra.h, lessThan(o11.h)); // small case drawn smaller
     });
 
+    test('every case draws exactly the fans it ships with', () {
+      for (final pc in c.byCategory(PartCategory.pcCase).cast<PcCase>()) {
+        final s = BuildShape.of(PcBuild(cpu: cpu).withPart(pc));
+        final slots = s.fanSlots;
+        expect(slots.length, pc.fans.total, reason: pc.id);
+        for (final f in slots) {
+          expect(f.r, greaterThan(0.05), reason: '${pc.id} fan too small');
+          final (along, lo, hi) = switch (f.place) {
+            FanPlace.front || FanPlace.rear => (f.y, 0.0, s.h),
+            FanPlace.top => (f.z, 0.0, s.d),
+            FanPlace.bottom => (f.z, 0.0, s.psuFrontZ),
+          };
+          expect(along - f.r, greaterThanOrEqualTo(lo), reason: pc.id);
+          expect(along + f.r, lessThanOrEqualTo(hi), reason: pc.id);
+        }
+      }
+      final air = BuildShape.of(withCase('montech-air100')).fanSlots;
+      expect(air.where((f) => f.place == FanPlace.front).length, 3);
+      expect(air.where((f) => f.place == FanPlace.rear).length, 1);
+    });
+
     test('a liquid cooler gets a radiator with one fan per 120 mm', () {
       final s = BuildShape.of(
         withCase('lianli-o11-evo', cooler: 'cooler-aio-360'),

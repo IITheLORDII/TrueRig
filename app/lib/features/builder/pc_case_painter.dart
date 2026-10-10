@@ -41,7 +41,7 @@ class PcCasePainter extends CustomPainter {
   final double Function() caseInOf;
 
   // Projection: the long side is shown wide, the front narrow.
-  static const double _cx = 0.42;
+  static const double _cx = 0.48;
   static const double _cz = 0.92;
   static const double _ax = 0.13;
   static const double _az = 0.17;
@@ -84,7 +84,7 @@ class PcCasePainter extends CustomPainter {
 
   /// Fits the largest case, so smaller cases are drawn smaller.
   void _fit(Size size) {
-    const bw = 0.62, bh = 1.1, bd = 1.16;
+    const bw = 0.78, bh = 1.1, bd = 1.16;
     const left = -bd * _cz;
     const right = bw * _cx;
     const top = bh + bw * _ax + bd * _az;
@@ -123,30 +123,15 @@ class PcCasePainter extends CustomPainter {
   // -------------------------------------------------------------- fans --
 
   /// Case fans with their plane axes, in the order they are fitted.
-  List<(V3, Offset, Offset)> _caseFans() {
-    final f = shape.fans;
-    final out = <(V3, Offset, Offset)>[];
-    const gap = 2 * _r + 0.03;
-    for (var i = 0; i < f.front; i++) {
-      final y = h - 0.2 - i * gap;
-      if (y - _r < 0.06) break;
-      out.add(((w / 2, y, 0.03), _ux, _uy));
-    }
-    for (var i = 0; i < f.bottom; i++) {
-      final z = 0.2 + i * gap;
-      if (z + _r > _psuBox.$1.$3 - 0.02) break;
-      out.add(((w / 2, 0.012, z), _ux, _uz));
-    }
-    for (var i = 0; i < f.top; i++) {
-      final z = 0.25 + i * gap;
-      if (z + _r > d - 0.05) break;
-      out.add(((w * 0.42, h - 0.015, z), _ux, _uz));
-    }
-    for (var i = 0; i < f.rear; i++) {
-      out.add(((w * 0.42, h - 0.22 - i * gap, d - 0.012), _ux, _uy));
-    }
-    return out;
-  }
+  List<(V3, Offset, Offset, double)> _caseFans() => [
+    for (final f in shape.fanSlots)
+      (
+        (f.x, f.y, f.z),
+        _ux,
+        f.place == FanPlace.front || f.place == FanPlace.rear ? _uy : _uz,
+        f.r,
+      ),
+  ];
 
   /// Fan k of n grows into place while the case arrives.
   double _fanIn(int k, int n, double caseIn) =>
@@ -172,13 +157,13 @@ class PcCasePainter extends CustomPainter {
     for (var k = 0; k < fans.length; k++) {
       final scale = _fanIn(k, fans.length, caseIn);
       if (scale <= 0) continue;
-      final (c, ua, ub) = fans[k];
+      final (c, ua, ub, r) = fans[k];
       _fan(
         canvas,
         c,
         ua,
         ub,
-        _r * scale,
+        r * scale,
         spin: caseIn * 4 * math.pi,
         rgb: shape.rgbFans,
       );
@@ -309,10 +294,10 @@ class PcCasePainter extends CustomPainter {
       }
     }
     if (!shape.rgbFans) return;
-    for (final (c, ua, ub) in _caseFans()) {
+    for (final (c, ua, ub, r) in _caseFans()) {
       if (c.$3 > 0.1) continue; // only front fans
       canvas.drawPath(
-        _ellipse(c, ua, ub, _r * 0.95),
+        _ellipse(c, ua, ub, r * 0.95),
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 3
@@ -325,9 +310,8 @@ class PcCasePainter extends CustomPainter {
   // ------------------------------------------------------------ parts --
 
   (V3, V3) get _psuBox {
-    final len = shape.style == CaseStyle.compact ? 0.32 : 0.42;
     final top = shape.style == CaseStyle.compact ? 0.18 : 0.22;
-    return ((0.05, 0.05, d - 0.03 - len), (w - 0.05, top, d - 0.03));
+    return ((0.05, 0.05, shape.psuFrontZ), (w - 0.05, top, d - 0.03));
   }
 
   /// Box of each part in drawing units (min, max).
@@ -531,7 +515,10 @@ class PcCasePainter extends CustomPainter {
   /// a radiator with its fans under the top of the case.
   void _liquid(Canvas canvas, V3 lo, V3 hi, double t, double a) {
     final n = shape.radiatorFans;
-    final radLen = n * (2 * _r + 0.02) + 0.06;
+    // Fans shrink a little if the radiator would not fit the case depth.
+    final room = d - 0.12 * _zs - 0.08;
+    final fr = math.min(_r, (room - 0.06) / (2 * n) - 0.01);
+    final radLen = n * (2 * fr + 0.02) + 0.06;
     final r0 = (0.07, h - 0.11, 0.12 * _zs);
     final r1 = (w - 0.2, h - 0.04, 0.12 * _zs + radLen);
     // Fans hanging under the radiator.
@@ -541,11 +528,11 @@ class PcCasePainter extends CustomPainter {
         (
           (r0.$1 + r1.$1) / 2,
           r0.$2 - 0.004,
-          r0.$3 + 0.04 + _r + i * (2 * _r + 0.02),
+          r0.$3 + 0.04 + fr + i * (2 * fr + 0.02),
         ),
         _ux,
         _uz,
-        _r * 0.9 * a,
+        fr * 0.9 * a,
         spin: t * 6 * math.pi,
         rgb: true,
         a: a,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/foundation.dart';
 import 'package:perf_engine/perf_engine.dart';
 
@@ -29,10 +31,11 @@ class BuildShape {
   factory BuildShape.of(PcBuild b) {
     final c = b.pcCase;
     final (w, h, d) = switch (c?.largestBoard) {
-      FormFactor.miniItx => (0.46, 0.72, 0.92),
-      FormFactor.microAtx => (0.52, 0.96, 1.0),
-      FormFactor.eAtx => (0.62, 1.1, 1.16),
-      _ => (0.55, 1.0, 1.1),
+      // A little wider than real cases so the inside reads well.
+      FormFactor.miniItx => (0.6, 0.74, 0.92),
+      FormFactor.microAtx => (0.66, 0.96, 1.0),
+      FormFactor.eAtx => (0.78, 1.1, 1.16),
+      _ => (0.7, 1.0, 1.1),
     };
     final cooler = b.cooler;
     final gpu = b.gpu;
@@ -125,6 +128,90 @@ class BuildShape {
     gpuTooLong,
     coolerTooTall,
   );
+}
+
+/// Where a case fan sits.
+enum FanPlace { front, bottom, top, rear }
+
+/// One case fan: mounting place, centre (drawing units) and radius.
+@immutable
+class FanSlot {
+  const FanSlot(this.place, this.x, this.y, this.z, this.r);
+
+  final FanPlace place;
+  final double x;
+  final double y;
+  final double z;
+  final double r;
+}
+
+/// Largest fan radius (a 120 mm fan, slightly enlarged like the case).
+const double kFanRadius = 0.14;
+
+extension BuildShapeLayout on BuildShape {
+  /// Front edge of the power supply (it sits at the bottom back).
+  double get psuFrontZ => d - 0.03 - (style == CaseStyle.compact ? 0.32 : 0.42);
+
+  /// Every fan the case ships with, evenly spread over its mounting
+  /// place. Never drops one: when space is short the fans get smaller.
+  List<FanSlot> get fanSlots {
+    List<double> spread(int n, double a, double b) => [
+      for (var i = 0; i < n; i++) a + (b - a) * (i + 0.5) / n,
+    ];
+    double radius(int n, double a, double b, double across) => math.min(
+      math.min(kFanRadius, (b - a) / (2 * n) - 0.01),
+      across / 2 - 0.03,
+    );
+    final out = <FanSlot>[];
+    void place(
+      FanPlace p,
+      int n,
+      double a,
+      double b,
+      double across,
+      FanSlot Function(double at, double r) at,
+    ) {
+      if (n <= 0) return;
+      final r = radius(n, a, b, across);
+      for (final v in spread(n, a, b)) {
+        out.add(at(v, r));
+      }
+    }
+
+    place(
+      FanPlace.front,
+      fans.front,
+      0.08,
+      h - 0.06,
+      w,
+      (y, r) => FanSlot(FanPlace.front, w / 2, y, 0.03, r),
+    );
+    place(
+      FanPlace.bottom,
+      fans.bottom,
+      0.06,
+      psuFrontZ - 0.02,
+      w,
+      (z, r) => FanSlot(FanPlace.bottom, w / 2, 0.012, z, r),
+    );
+    place(
+      FanPlace.top,
+      fans.top,
+      0.06,
+      d - 0.06,
+      w,
+      (z, r) => FanSlot(FanPlace.top, w * 0.42, h - 0.015, z, r),
+    );
+    place(
+      FanPlace.rear,
+      fans.rear,
+      h * 0.45,
+      h - 0.06,
+      w,
+      (y, r) => FanSlot(FanPlace.rear, w * 0.42, y, d - 0.012, r),
+    );
+    return out;
+  }
 }
 
 /// "2 fanla geliyor (1 ön, 1 arka)" / "Fansız geliyor; fan alman gerekir".
