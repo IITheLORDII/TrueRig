@@ -145,6 +145,19 @@ void main() {
       expect(air.where((f) => f.place == FanPlace.top).length, 2);
     });
 
+    test('cases keep their real size relative to the reference', () {
+      final ref = BuildShape.of(withCase('corsair-4000d'));
+      expect(ref.d, closeTo(1.1, 1e-9)); // the 4000D sets the scale
+      for (final pc in c.byCategory(PartCategory.pcCase).cast<PcCase>()) {
+        final s = BuildShape.of(PcBuild(cpu: cpu).withPart(pc));
+        expect(s.w / ref.w, closeTo(pc.widthMm / 230, 1e-9), reason: pc.id);
+        expect(s.h / ref.h, closeTo(pc.heightMm / 466, 1e-9), reason: pc.id);
+        expect(s.d / ref.d, closeTo(pc.depthMm / 453, 1e-9), reason: pc.id);
+      }
+      // No case chosen: drawn as the reference.
+      expect(BuildShape.of(PcBuild(cpu: cpu)).h, ref.h);
+    });
+
     test('a liquid cooler gets a radiator with one fan per 120 mm', () {
       final s = BuildShape.of(
         withCase('lianli-o11-evo', cooler: 'cooler-aio-360'),
@@ -183,6 +196,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Terra fansız geliyor'), findsOneWidget);
       expect(find.textContaining('1 fan takılabilir: 1 alt'), findsOneWidget);
+      expect(find.textContaining('153 × 218 × 343 mm'), findsOneWidget);
       expect(
         find.textContaining('Soğutucu bu kasaya sığmıyor'),
         findsOneWidget,

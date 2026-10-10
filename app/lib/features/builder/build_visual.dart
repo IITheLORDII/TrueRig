@@ -123,7 +123,7 @@ class _BuildVisualState extends State<BuildVisual> {
       child: Column(
         children: [
           SizedBox(
-            height: 200,
+            height: 240,
             child: AnimatedSwitcher(
               duration: _motion(context, Motion.normal),
               child: widget.isLaptop
@@ -169,7 +169,11 @@ class _BuildVisualState extends State<BuildVisual> {
             Padding(
               padding: const EdgeInsets.only(top: Space.xs),
               child: Text(
-                caseFansText(widget.build.pcCase!),
+                [
+                  if (caseSizeText(widget.build.pcCase!) case final size?)
+                    '${widget.build.pcCase!.model}: $size',
+                  caseFansText(widget.build.pcCase!),
+                ].join('\n'),
                 textAlign: TextAlign.center,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: context.palette.muted,

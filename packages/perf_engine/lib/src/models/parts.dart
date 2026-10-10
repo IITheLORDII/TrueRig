@@ -243,6 +243,9 @@ class PcCase extends Part {
     this.fans = const CaseFans(),
     this.mounts = const CaseFans(),
     this.rgbFans = false,
+    this.widthMm = 0,
+    this.heightMm = 0,
+    this.depthMm = 0,
   });
 
   final List<FormFactor> supportedFormFactors;
@@ -258,6 +261,11 @@ class PcCase extends Part {
 
   /// The included fans are addressable RGB.
   final bool rgbFans;
+
+  /// Outside size from the spec sheet (0 = unknown).
+  final int widthMm;
+  final int heightMm;
+  final int depthMm;
 
   /// Largest board it takes (sets how big the case is drawn).
   FormFactor get largestBoard => supportedFormFactors.reduce(

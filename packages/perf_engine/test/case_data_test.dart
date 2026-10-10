@@ -37,6 +37,21 @@ void main() {
     }
   });
 
+  test('every case has its outside size from the spec sheet', () {
+    final c4000d = byId('corsair-4000d');
+    expect(
+      (c4000d.widthMm, c4000d.heightMm, c4000d.depthMm),
+      (230, 466, 453),
+    );
+    final terra = byId('fractal-terra');
+    expect((terra.widthMm, terra.heightMm, terra.depthMm), (153, 218, 343));
+    for (final c in cases) {
+      expect(c.widthMm, inInclusiveRange(120, 350), reason: c.id);
+      expect(c.heightMm, inInclusiveRange(180, 600), reason: c.id);
+      expect(c.depthMm, inInclusiveRange(250, 600), reason: c.id);
+    }
+  });
+
   test('only small cases are drawn as compact', () {
     for (final c in cases) {
       if (c.style == CaseStyle.compact) {

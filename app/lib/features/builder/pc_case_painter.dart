@@ -82,12 +82,13 @@ class PcCasePainter extends CustomPainter {
     return path..close();
   }
 
-  /// Fits the largest case, so smaller cases are drawn smaller.
+  /// Fits the largest case (a big full tower), so every case is drawn at
+  /// the same millimetre scale: smaller cases really look smaller.
   void _fit(Size size) {
-    const bw = 0.78, bh = 1.1, bd = 1.16;
-    const left = -bd * _cz;
-    const right = bw * _cx;
-    const top = bh + bw * _ax + bd * _az;
+    final (bw, bh, bd) = caseUnits(304, 532, 522);
+    final left = -bd * _cz;
+    final right = bw * _cx;
+    final top = bh + bw * _ax + bd * _az;
     _s = math.min(size.width / (right - left), size.height / top) * 0.9;
     _origin = Offset(
       size.width / 2 - (left + right) / 2 * _s,

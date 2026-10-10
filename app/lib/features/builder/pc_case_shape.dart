@@ -3,8 +3,32 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:perf_engine/perf_engine.dart';
 
-/// Millimetres in one drawing unit (a mid tower is about 1.1 units deep).
-const double kMmPerUnit = 410;
+/// The reference case: Corsair 4000D Airflow, a common mid tower
+/// (width, height, depth in mm). Every case and part is drawn with the
+/// same millimetre scale, so cases keep their real size relative to it.
+const (int, int, int) kReferenceCaseMm = (230, 466, 453);
+
+/// Millimetres in one drawing unit: the reference case is 1.1 units deep.
+const double kMmPerUnit = 453 / 1.1;
+
+/// All cases are drawn this much wider than real (the same for every
+/// case, so their proportions to each other stay true) to show the inside.
+const double kWidthBoost = 1.25;
+
+/// Case size in drawing units from its outside size in mm.
+(double, double, double) caseUnits(int widthMm, int heightMm, int depthMm) => (
+  widthMm / kMmPerUnit * kWidthBoost,
+  heightMm / kMmPerUnit,
+  depthMm / kMmPerUnit,
+);
+
+/// Typical size by board when a case has no measurements.
+(int, int, int) _typicalMm(FormFactor? board) => switch (board) {
+  FormFactor.miniItx => (185, 290, 370),
+  FormFactor.microAtx => (210, 420, 400),
+  FormFactor.eAtx => (285, 500, 500),
+  _ => kReferenceCaseMm,
+};
 
 /// Everything the case drawing needs to know about a build: case size and
 /// look, its fans, the cooler type and how big the parts are, and whether
@@ -31,13 +55,12 @@ class BuildShape {
 
   factory BuildShape.of(PcBuild b) {
     final c = b.pcCase;
-    final (w, h, d) = switch (c?.largestBoard) {
-      // A little wider than real cases so the inside reads well.
-      FormFactor.miniItx => (0.6, 0.74, 0.92),
-      FormFactor.microAtx => (0.66, 0.96, 1.0),
-      FormFactor.eAtx => (0.78, 1.1, 1.16),
-      _ => (0.7, 1.0, 1.1),
-    };
+    final (wm, hm, dm) = c == null
+        ? kReferenceCaseMm
+        : c.widthMm > 0 && c.heightMm > 0 && c.depthMm > 0
+        ? (c.widthMm, c.heightMm, c.depthMm)
+        : _typicalMm(c.largestBoard);
+    final (w, h, d) = caseUnits(wm, hm, dm);
     final cooler = b.cooler;
     final gpu = b.gpu;
     final gpuMm = gpu == null || gpu.lengthMm == 0 ? 300 : gpu.lengthMm;
@@ -55,7 +78,8 @@ class BuildShape {
       radiatorFans: cooler != null && cooler.isLiquid
           ? (cooler.radiatorMm ~/ 120).clamp(1, 3)
           : 0,
-      coolerReach: (coolerMm == 0 ? 155 : coolerMm) / kMmPerUnit,
+      // Coolers stick out across the width, so they get the same boost.
+      coolerReach: (coolerMm == 0 ? 155 : coolerMm) / kMmPerUnit * kWidthBoost,
       gpuLength: gpuMm / kMmPerUnit,
       gpuIntegrated: gpu != null && isIntegratedGpu(gpu),
       gpuTooLong:
@@ -220,6 +244,13 @@ extension BuildShapeLayout on BuildShape {
     );
     return out;
   }
+}
+
+/// "230 × 466 × 453 mm (en × yükseklik × derinlik)", or null if unknown.
+String? caseSizeText(PcCase c) {
+  if (c.widthMm == 0 || c.heightMm == 0 || c.depthMm == 0) return null;
+  return '${c.widthMm} × ${c.heightMm} × ${c.depthMm} mm '
+      '(en × yükseklik × derinlik)';
 }
 
 String _places(CaseFans f) => [
