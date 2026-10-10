@@ -7,6 +7,7 @@ import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/features/builder/pc_case_painter.dart';
+import 'package:darbogaz/features/builder/pc_case_shape.dart';
 
 /// Picture of the user's computer at the top of "Bilgisayarım": each chosen
 /// part drops into a desktop case, or a laptop opens with the TrueRig mark
@@ -77,9 +78,30 @@ class _BuildVisualState extends State<BuildVisual> {
       for (final c in _core)
         if (b.partFor(c) == null) _name(c),
     ];
-    if (present.isEmpty) return 'Masaüstü kasa: henüz parça yok';
+    final problems = _fitProblems();
+    final tail = [
+      ...problems,
+      if (b.pcCase case final c?) caseFansText(c),
+    ].map((t) => '. $t').join();
+    if (present.isEmpty) return 'Masaüstü kasa: henüz parça yok$tail';
     return 'Masaüstü kasa: ${present.join(', ')} takılı'
-        '${missing.isEmpty ? '' : '; ${missing.join(', ')} eksik'}';
+        '${missing.isEmpty ? '' : '; ${missing.join(', ')} eksik'}$tail';
+  }
+
+  /// Parts too big for the chosen case, in plain words.
+  List<String> _fitProblems() {
+    final b = widget.build;
+    final c = b.pcCase;
+    if (c == null || widget.isLaptop) return const [];
+    final shape = BuildShape.of(b);
+    return [
+      if (shape.gpuTooLong)
+        'Ekran kartı bu kasaya sığmıyor: kart ${b.gpu!.lengthMm} mm, '
+            'kasa en fazla ${c.maxGpuLengthMm} mm alıyor',
+      if (shape.coolerTooTall)
+        'Soğutucu bu kasaya sığmıyor: soğutucu ${b.cooler!.heightMm} mm, '
+            'kasa en fazla ${c.maxCoolerHeightMm} mm alıyor',
+    ];
   }
 
   String _caption() {
@@ -119,6 +141,41 @@ class _BuildVisualState extends State<BuildVisual> {
               color: context.palette.muted,
             ),
           ),
+          for (final problem in _fitProblems())
+            Padding(
+              padding: const EdgeInsets.only(top: Space.xs),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 16,
+                    color: context.palette.bad,
+                  ),
+                  const SizedBox(width: Space.xs),
+                  Flexible(
+                    child: Text(
+                      problem,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: context.palette.bad,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (!widget.isLaptop && widget.build.pcCase != null)
+            Padding(
+              padding: const EdgeInsets.only(top: Space.xs),
+              child: Text(
+                caseFansText(widget.build.pcCase!),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: context.palette.muted,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -160,9 +217,11 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
 
   /// Share of each controller spent waiting (staggered arrivals).
   final _waits = <PartCategory, double>{};
-  late final AnimationController _glow = AnimationController(
+
+  /// 0..1 while a newly chosen case lights up and gets its fans.
+  late final AnimationController _caseIn = AnimationController(
     vsync: this,
-    duration: Motion.slow,
+    duration: const Duration(milliseconds: 1400),
   );
 
   bool get _still => MediaQuery.maybeDisableAnimationsOf(context) ?? false;
@@ -174,7 +233,9 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
       _moves[c] = AnimationController(vsync: this, duration: _fall);
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _arrive(_inside.where((c) => widget.pc.partFor(c) != null));
+      if (!mounted) return;
+      _arrive(_inside.where((c) => widget.pc.partFor(c) != null));
+      if (widget.pc.pcCase != null) _fitCase();
     });
   }
 
@@ -192,12 +253,12 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
       }
     }
     _arrive(added);
-    if (widget.pc.pcCase != null &&
-        widget.pc.pcCase?.id != old.pc.pcCase?.id &&
-        !_still) {
-      _glow.forward(from: 0);
+    if (widget.pc.pcCase != null && widget.pc.pcCase?.id != old.pc.pcCase?.id) {
+      _fitCase();
     }
   }
+
+  void _fitCase() => _still ? _caseIn.value = 1 : _caseIn.forward(from: 0);
 
   void _arrive(Iterable<PartCategory> cats) {
     var i = 0;
@@ -219,7 +280,7 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
     for (final c in _moves.values) {
       c.dispose();
     }
-    _glow.dispose();
+    _caseIn.dispose();
     super.dispose();
   }
 
@@ -243,19 +304,20 @@ class _DesktopState extends State<_Desktop> with TickerProviderStateMixin {
       glass: theme.colorScheme.primary.withValues(alpha: 0.05),
       edge: p.muted.withValues(alpha: 0.6),
       ghost: p.muted.withValues(alpha: 0.7),
+      bad: p.bad,
     );
     return SizedBox.expand(
       child: CustomPaint(
         painter: PcCasePainter(
-          repaint: Listenable.merge([..._moves.values, _glow]),
+          repaint: Listenable.merge([..._moves.values, _caseIn]),
+          shape: BuildShape.of(widget.pc),
           progressOf: _progress,
           present: {
             for (final c in _inside)
               if (widget.pc.partFor(c) != null) c,
           },
           colors: colors,
-          branded: widget.pc.pcCase != null,
-          caseGlowOf: () => math.sin(math.pi * _glow.value),
+          caseInOf: () => _caseIn.value,
         ),
       ),
     );

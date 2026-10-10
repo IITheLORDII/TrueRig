@@ -230,7 +230,8 @@ const List<PcCase> kGenericCases = [
       refPriceUsd: 90,
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 300,
-      maxCoolerHeightMm: 70),
+      maxCoolerHeightMm: 70,
+      style: CaseStyle.compact),
   PcCase(
       id: 'case-itx',
       brand: 'Genel',
@@ -238,7 +239,9 @@ const List<PcCase> kGenericCases = [
       refPriceUsd: 80,
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 330,
-      maxCoolerHeightMm: 150),
+      maxCoolerHeightMm: 150,
+      style: CaseStyle.compact,
+      fans: CaseFans(rear: 1)),
   PcCase(
       id: 'case-matx',
       brand: 'Genel',
@@ -246,7 +249,8 @@ const List<PcCase> kGenericCases = [
       refPriceUsd: 60,
       supportedFormFactors: [FormFactor.miniItx, FormFactor.microAtx],
       maxGpuLengthMm: 320,
-      maxCoolerHeightMm: 160),
+      maxCoolerHeightMm: 160,
+      fans: CaseFans(front: 1, rear: 1)),
   PcCase(
       id: 'case-atx-mid',
       brand: 'Genel',
@@ -258,7 +262,8 @@ const List<PcCase> kGenericCases = [
         FormFactor.atx
       ],
       maxGpuLengthMm: 360,
-      maxCoolerHeightMm: 165),
+      maxCoolerHeightMm: 165,
+      fans: CaseFans(front: 2, rear: 1)),
   PcCase(
       id: 'case-atx-full',
       brand: 'Genel',
@@ -271,7 +276,10 @@ const List<PcCase> kGenericCases = [
         FormFactor.eAtx
       ],
       maxGpuLengthMm: 420,
-      maxCoolerHeightMm: 185),
+      maxCoolerHeightMm: 185,
+      style: CaseStyle.aquarium,
+      fans: CaseFans(bottom: 3, rear: 1),
+      rgbFans: true),
 ];
 
 const _allSockets = ['AM4', 'AM5', 'LGA1151', 'LGA1200', 'LGA1700', 'LGA1851'];
@@ -319,6 +327,7 @@ const List<Cooler> kGenericCoolers = [
       tdpRatingW: 250),
   Cooler(
       id: 'cooler-aio-240',
+      radiatorMm: 240,
       brand: 'Genel',
       model: '240 mm sıvı soğutma (AIO)',
       refPriceUsd: 80,
@@ -328,6 +337,7 @@ const List<Cooler> kGenericCoolers = [
       isLiquid: true),
   Cooler(
       id: 'cooler-aio-360',
+      radiatorMm: 360,
       brand: 'Genel',
       model: '360 mm sıvı soğutma (AIO)',
       refPriceUsd: 110,

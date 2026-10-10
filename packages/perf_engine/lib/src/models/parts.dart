@@ -201,6 +201,27 @@ class Psu extends Part {
   PartCategory get category => PartCategory.psu;
 }
 
+/// Look of a case: glass front and side ("aquarium", e.g. Lian Li O11),
+/// mesh front for airflow, or a small form factor box.
+enum CaseStyle { aquarium, airflow, compact }
+
+/// Fans that come pre-installed, by mounting place.
+class CaseFans {
+  const CaseFans({
+    this.front = 0,
+    this.rear = 0,
+    this.top = 0,
+    this.bottom = 0,
+  });
+
+  final int front;
+  final int rear;
+  final int top;
+  final int bottom;
+
+  int get total => front + rear + top + bottom;
+}
+
 class PcCase extends Part {
   const PcCase({
     required super.id,
@@ -212,11 +233,26 @@ class PcCase extends Part {
     required this.supportedFormFactors,
     required this.maxGpuLengthMm,
     required this.maxCoolerHeightMm,
+    this.style = CaseStyle.airflow,
+    this.fans = const CaseFans(),
+    this.rgbFans = false,
   });
 
   final List<FormFactor> supportedFormFactors;
   final int maxGpuLengthMm;
   final int maxCoolerHeightMm;
+  final CaseStyle style;
+
+  /// Fans in the box (none = sold without fans).
+  final CaseFans fans;
+
+  /// The included fans are addressable RGB.
+  final bool rgbFans;
+
+  /// Largest board it takes (sets how big the case is drawn).
+  FormFactor get largestBoard => supportedFormFactors.reduce(
+        (a, b) => a.index >= b.index ? a : b,
+      );
 
   @override
   PartCategory get category => PartCategory.pcCase;
@@ -234,6 +270,7 @@ class Cooler extends Part {
     required this.heightMm,
     required this.tdpRatingW,
     this.isLiquid = false,
+    this.radiatorMm = 0,
   });
 
   final List<String> sockets;
@@ -242,6 +279,9 @@ class Cooler extends Part {
   final int heightMm;
   final int tdpRatingW;
   final bool isLiquid;
+
+  /// Radiator length of a liquid cooler (240 = two 120 mm fans).
+  final int radiatorMm;
 
   @override
   PartCategory get category => PartCategory.cooler;

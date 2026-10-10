@@ -7,6 +7,7 @@ import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/features/builder/build_visual.dart';
 import 'package:darbogaz/features/builder/pc_case_painter.dart';
+import 'package:darbogaz/features/builder/pc_case_shape.dart';
 
 Widget _host(Widget child, {bool reduceMotion = false}) => MaterialApp(
   theme: AppTheme.dark(),
@@ -91,6 +92,71 @@ void main() {
     expect(find.byType(TrueRigMark), findsOneWidget);
     expect(find.text('Casper Excalibur G770'), findsOneWidget);
     expect(find.textContaining('kasa'), findsNothing);
+  });
+
+  group('the chosen case changes the picture', () {
+    PcBuild withCase(String id, {String? cooler}) {
+      var b = PcBuild(cpu: cpu, gpu: gpu).withPart(c.byId(id)!);
+      if (cooler != null) b = b.withPart(c.byId(cooler)!);
+      return b;
+    }
+
+    test('fans, style and size follow the case', () {
+      final air = BuildShape.of(withCase('montech-air100'));
+      expect(air.fans.total, 4);
+      expect(air.rgbFans, isTrue);
+      expect(air.style, CaseStyle.airflow);
+      final o11 = BuildShape.of(withCase('lianli-o11-evo'));
+      expect(o11.style, CaseStyle.aquarium);
+      expect(o11.fans.total, 0);
+      final terra = BuildShape.of(withCase('fractal-terra'));
+      expect(terra.style, CaseStyle.compact);
+      expect(terra.h, lessThan(o11.h)); // small case drawn smaller
+    });
+
+    test('a liquid cooler gets a radiator with one fan per 120 mm', () {
+      final s = BuildShape.of(
+        withCase('lianli-o11-evo', cooler: 'cooler-aio-360'),
+      );
+      expect(s.liquid, isTrue);
+      expect(s.radiatorFans, 3);
+    });
+
+    test('parts too big for the case are flagged', () {
+      final s = BuildShape.of(
+        withCase('fractal-terra', cooler: 'cooler-tower-120'),
+      );
+      expect(s.coolerTooTall, isTrue);
+      expect(s.gpuTooLong, gpu.lengthMm > 322);
+    });
+
+    test('built-in graphics draws no card', () {
+      final igpu = c
+          .byCategory(PartCategory.gpu)
+          .cast<Gpu>()
+          .firstWhere(isIntegratedGpu);
+      expect(BuildShape.of(PcBuild(gpu: igpu)).gpuIntegrated, isTrue);
+    });
+
+    testWidgets('caption tells the fans and what does not fit', (tester) async {
+      await tester.pumpWidget(
+        _host(
+          SingleChildScrollView(
+            child: BuildVisual(
+              build: withCase('fractal-terra', cooler: 'cooler-tower-120'),
+              isLaptop: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Terra fansız geliyor'), findsOneWidget);
+      expect(
+        find.textContaining('Soğutucu bu kasaya sığmıyor'),
+        findsOneWidget,
+      );
+      expect(_painter(tester).shape.coolerTooTall, isTrue);
+    });
   });
 
   testWidgets('reduced motion shows the final picture at once', (tester) async {

@@ -304,7 +304,9 @@ const List<PcCase> kCases = [
       refPriceUsd: 159,
       supportedFormFactors: [..._allFf, FormFactor.eAtx],
       maxGpuLengthMm: 422,
-      maxCoolerHeightMm: 167),
+      maxCoolerHeightMm: 167,
+      style: CaseStyle.aquarium,
+      fans: CaseFans()),
   PcCase(
       id: 'corsair-4000d',
       brand: 'Corsair',
@@ -312,7 +314,8 @@ const List<PcCase> kCases = [
       refPriceUsd: 104,
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 360,
-      maxCoolerHeightMm: 170),
+      maxCoolerHeightMm: 170,
+      fans: CaseFans(front: 1, rear: 1)),
   PcCase(
       id: 'nzxt-h5-flow',
       brand: 'NZXT',
@@ -320,7 +323,8 @@ const List<PcCase> kCases = [
       refPriceUsd: 94,
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 365,
-      maxCoolerHeightMm: 165),
+      maxCoolerHeightMm: 165,
+      fans: CaseFans(front: 1, rear: 1)),
   PcCase(
       id: 'fractal-north',
       brand: 'Fractal Design',
@@ -328,7 +332,8 @@ const List<PcCase> kCases = [
       refPriceUsd: 139,
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 355,
-      maxCoolerHeightMm: 170),
+      maxCoolerHeightMm: 170,
+      fans: CaseFans(front: 2)),
   PcCase(
       id: 'montech-air100',
       brand: 'Montech',
@@ -336,7 +341,9 @@ const List<PcCase> kCases = [
       refPriceUsd: 59,
       supportedFormFactors: [FormFactor.miniItx, FormFactor.microAtx],
       maxGpuLengthMm: 330,
-      maxCoolerHeightMm: 161),
+      maxCoolerHeightMm: 161,
+      fans: CaseFans(front: 3, rear: 1),
+      rgbFans: true),
   PcCase(
       id: 'cm-nr200p',
       brand: 'Cooler Master',
@@ -344,7 +351,9 @@ const List<PcCase> kCases = [
       refPriceUsd: 99,
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 336,
-      maxCoolerHeightMm: 155),
+      maxCoolerHeightMm: 155,
+      style: CaseStyle.compact,
+      fans: CaseFans(top: 2)),
   PcCase(
       id: 'fractal-terra',
       brand: 'Fractal Design',
@@ -352,7 +361,8 @@ const List<PcCase> kCases = [
       refPriceUsd: 179,
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 322,
-      maxCoolerHeightMm: 77),
+      maxCoolerHeightMm: 77,
+      style: CaseStyle.compact),
 ];
 
 const List<Cooler> kCoolers = [
@@ -406,6 +416,7 @@ const List<Cooler> kCoolers = [
       tdpRatingW: 250),
   Cooler(
       id: 'arctic-lf3-360',
+      radiatorMm: 360,
       brand: 'Arctic',
       model: 'Liquid Freezer III 360',
       refPriceUsd: 99,
