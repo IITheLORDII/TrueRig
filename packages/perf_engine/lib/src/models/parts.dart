@@ -205,21 +205,27 @@ class Psu extends Part {
 /// mesh front for airflow, or a small form factor box.
 enum CaseStyle { aquarium, airflow, compact }
 
-/// Fans that come pre-installed, by mounting place.
+/// A number of fans per mounting place (fans in the box, or mounts).
 class CaseFans {
   const CaseFans({
     this.front = 0,
     this.rear = 0,
     this.top = 0,
     this.bottom = 0,
+    this.side = 0,
   });
 
   final int front;
   final int rear;
   final int top;
+
+  /// Under the case or on the power supply shroud.
   final int bottom;
 
-  int get total => front + rear + top + bottom;
+  /// On a side bracket (Lian Li O11, Cooler Master NR200P).
+  final int side;
+
+  int get total => front + rear + top + bottom + side;
 }
 
 class PcCase extends Part {
@@ -235,6 +241,7 @@ class PcCase extends Part {
     required this.maxCoolerHeightMm,
     this.style = CaseStyle.airflow,
     this.fans = const CaseFans(),
+    this.mounts = const CaseFans(),
     this.rgbFans = false,
   });
 
@@ -245,6 +252,9 @@ class PcCase extends Part {
 
   /// Fans in the box (none = sold without fans).
   final CaseFans fans;
+
+  /// Fans the case can take at most, per place (from the spec sheet).
+  final CaseFans mounts;
 
   /// The included fans are addressable RGB.
   final bool rgbFans;

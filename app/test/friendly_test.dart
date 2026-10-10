@@ -68,7 +68,7 @@ void main() {
     for (final open in [
       () => tapText(tester, 'Bilgisayarı ne için alıyorsun?'),
       () => tap(tester, find.byTooltip('Profil ve ayarlar')),
-      () => tapText(tester, 'Hazır bilgisayar / laptop seç'),
+      () => tapText(tester, 'Hazır sistem seç'),
     ]) {
       await open();
       expect(find.byType(NavigationBar), findsOneWidget);

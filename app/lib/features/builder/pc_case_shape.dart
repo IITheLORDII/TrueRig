@@ -17,6 +17,7 @@ class BuildShape {
     required this.h,
     required this.d,
     required this.fans,
+    required this.mounts,
     required this.rgbFans,
     required this.caseChosen,
     required this.liquid,
@@ -47,6 +48,7 @@ class BuildShape {
       h: h,
       d: d,
       fans: c?.fans ?? const CaseFans(),
+      mounts: c?.mounts ?? const CaseFans(),
       rgbFans: c?.rgbFans ?? false,
       caseChosen: c != null,
       liquid: cooler?.isLiquid ?? false,
@@ -72,6 +74,9 @@ class BuildShape {
   final double h;
   final double d;
   final CaseFans fans;
+
+  /// Fan places the case offers (empty ones are drawn as outlines).
+  final CaseFans mounts;
   final bool rgbFans;
   final bool caseChosen;
 
@@ -101,6 +106,7 @@ class BuildShape {
       other.fans.rear == fans.rear &&
       other.fans.top == fans.top &&
       other.fans.bottom == fans.bottom &&
+      other.mounts.total == mounts.total &&
       other.rgbFans == rgbFans &&
       other.caseChosen == caseChosen &&
       other.liquid == liquid &&
@@ -118,6 +124,7 @@ class BuildShape {
     h,
     d,
     fans.total,
+    mounts.total,
     rgbFans,
     caseChosen,
     liquid,
@@ -133,16 +140,18 @@ class BuildShape {
 /// Where a case fan sits.
 enum FanPlace { front, bottom, top, rear }
 
-/// One case fan: mounting place, centre (drawing units) and radius.
+/// One fan place: where it is, its centre (drawing units), its radius and
+/// whether a fan comes in it.
 @immutable
 class FanSlot {
-  const FanSlot(this.place, this.x, this.y, this.z, this.r);
+  const FanSlot(this.place, this.x, this.y, this.z, this.r, this.filled);
 
   final FanPlace place;
   final double x;
   final double y;
   final double z;
   final double r;
+  final bool filled;
 }
 
 /// Largest fan radius (a 120 mm fan, slightly enlarged like the case).
@@ -152,78 +161,84 @@ extension BuildShapeLayout on BuildShape {
   /// Front edge of the power supply (it sits at the bottom back).
   double get psuFrontZ => d - 0.03 - (style == CaseStyle.compact ? 0.32 : 0.42);
 
-  /// Every fan the case ships with, evenly spread over its mounting
-  /// place. Never drops one: when space is short the fans get smaller.
+  /// Every fan place the case offers (front, bottom, top, rear), evenly
+  /// spread; the first ones of each place hold the fans that come in the
+  /// box. Never drops one: when space is short the fans get smaller. Side
+  /// brackets are left to the text (they would cover the glass).
   List<FanSlot> get fanSlots {
     List<double> spread(int n, double a, double b) => [
       for (var i = 0; i < n; i++) a + (b - a) * (i + 0.5) / n,
     ];
-    double radius(int n, double a, double b, double across) => math.min(
-      math.min(kFanRadius, (b - a) / (2 * n) - 0.01),
-      across / 2 - 0.03,
-    );
+    double radius(int n, double a, double b) =>
+        math.min(math.min(kFanRadius, (b - a) / (2 * n) - 0.01), w / 2 - 0.03);
     final out = <FanSlot>[];
     void place(
-      FanPlace p,
-      int n,
+      int filled,
+      int mounts,
       double a,
       double b,
-      double across,
-      FanSlot Function(double at, double r) at,
+      FanSlot Function(double at, double r, bool filled) at,
     ) {
+      // Mounts from the spec sheet; never fewer places than fans.
+      final n = math.max(filled, mounts);
       if (n <= 0) return;
-      final r = radius(n, a, b, across);
-      for (final v in spread(n, a, b)) {
-        out.add(at(v, r));
+      final r = radius(n, a, b);
+      final spots = spread(n, a, b);
+      for (var i = 0; i < n; i++) {
+        out.add(at(spots[i], r, i < filled));
       }
     }
 
+    // Front fans fill from the top down.
     place(
-      FanPlace.front,
       fans.front,
+      mounts.front,
       0.08,
       h - 0.06,
-      w,
-      (y, r) => FanSlot(FanPlace.front, w / 2, y, 0.03, r),
+      (y, r, f) => FanSlot(FanPlace.front, w / 2, h - y + 0.02, 0.03, r, f),
     );
     place(
-      FanPlace.bottom,
       fans.bottom,
+      mounts.bottom,
       0.06,
       psuFrontZ - 0.02,
-      w,
-      (z, r) => FanSlot(FanPlace.bottom, w / 2, 0.012, z, r),
+      (z, r, f) => FanSlot(FanPlace.bottom, w / 2, 0.012, z, r, f),
     );
     place(
-      FanPlace.top,
       fans.top,
+      mounts.top,
       0.06,
       d - 0.06,
-      w,
-      (z, r) => FanSlot(FanPlace.top, w * 0.42, h - 0.015, z, r),
+      (z, r, f) => FanSlot(FanPlace.top, w * 0.42, h - 0.015, z, r, f),
     );
     place(
-      FanPlace.rear,
       fans.rear,
+      mounts.rear,
       h * 0.45,
       h - 0.06,
-      w,
-      (y, r) => FanSlot(FanPlace.rear, w * 0.42, y, d - 0.012, r),
+      (y, r, f) => FanSlot(FanPlace.rear, w * 0.42, y, d - 0.012, r, f),
     );
     return out;
   }
 }
 
-/// "2 fanla geliyor (1 ön, 1 arka)" / "Fansız geliyor; fan alman gerekir".
+String _places(CaseFans f) => [
+  if (f.front > 0) '${f.front} ön',
+  if (f.top > 0) '${f.top} üst',
+  if (f.bottom > 0) '${f.bottom} alt',
+  if (f.side > 0) '${f.side} yan',
+  if (f.rear > 0) '${f.rear} arka',
+].join(', ');
+
+/// "4000D Airflow 2 fanla geliyor (1 ön, 1 arka). 6 fan takılabilir:
+/// 3 ön, 2 üst, 1 arka."
 String caseFansText(PcCase c) {
   final f = c.fans;
-  if (f.total == 0) return '${c.model} fansız geliyor; fan alman gerekir';
-  final where = [
-    if (f.front > 0) '${f.front} ön',
-    if (f.top > 0) '${f.top} üst',
-    if (f.bottom > 0) '${f.bottom} alt',
-    if (f.rear > 0) '${f.rear} arka',
-  ].join(', ');
-  final rgb = c.rgbFans ? ' ışıklı' : '';
-  return '${c.model} ${f.total}$rgb fanla geliyor ($where)';
+  final m = c.mounts;
+  final inBox = f.total == 0
+      ? '${c.model} fansız geliyor; fan alman gerekir'
+      : '${c.model} ${f.total}${c.rgbFans ? ' ışıklı' : ''} fanla geliyor '
+            '(${_places(f)})';
+  if (m.total == 0) return '$inBox.';
+  return '$inBox. ${m.total} fan takılabilir: ${_places(m)}.';
 }

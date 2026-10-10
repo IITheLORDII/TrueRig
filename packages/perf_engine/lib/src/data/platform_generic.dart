@@ -231,7 +231,9 @@ const List<PcCase> kGenericCases = [
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 300,
       maxCoolerHeightMm: 70,
-      style: CaseStyle.compact),
+      style: CaseStyle.compact,
+      fans: CaseFans(),
+      mounts: CaseFans(bottom: 1)),
   PcCase(
       id: 'case-itx',
       brand: 'Genel',
@@ -241,7 +243,8 @@ const List<PcCase> kGenericCases = [
       maxGpuLengthMm: 330,
       maxCoolerHeightMm: 150,
       style: CaseStyle.compact,
-      fans: CaseFans(rear: 1)),
+      fans: CaseFans(rear: 1),
+      mounts: CaseFans(top: 2, bottom: 2, rear: 1)),
   PcCase(
       id: 'case-matx',
       brand: 'Genel',
@@ -250,7 +253,8 @@ const List<PcCase> kGenericCases = [
       supportedFormFactors: [FormFactor.miniItx, FormFactor.microAtx],
       maxGpuLengthMm: 320,
       maxCoolerHeightMm: 160,
-      fans: CaseFans(front: 1, rear: 1)),
+      fans: CaseFans(front: 1, rear: 1),
+      mounts: CaseFans(front: 3, top: 2, rear: 1)),
   PcCase(
       id: 'case-atx-mid',
       brand: 'Genel',
@@ -263,7 +267,8 @@ const List<PcCase> kGenericCases = [
       ],
       maxGpuLengthMm: 360,
       maxCoolerHeightMm: 165,
-      fans: CaseFans(front: 2, rear: 1)),
+      fans: CaseFans(front: 2, rear: 1),
+      mounts: CaseFans(front: 3, top: 2, rear: 1)),
   PcCase(
       id: 'case-atx-full',
       brand: 'Genel',
@@ -279,6 +284,7 @@ const List<PcCase> kGenericCases = [
       maxCoolerHeightMm: 185,
       style: CaseStyle.aquarium,
       fans: CaseFans(bottom: 3, rear: 1),
+      mounts: CaseFans(top: 3, side: 3, bottom: 3, rear: 1),
       rgbFans: true),
 ];
 

@@ -306,7 +306,8 @@ const List<PcCase> kCases = [
       maxGpuLengthMm: 422,
       maxCoolerHeightMm: 167,
       style: CaseStyle.aquarium,
-      fans: CaseFans()),
+      fans: CaseFans(),
+      mounts: CaseFans(top: 3, side: 3, bottom: 3, rear: 1)),
   PcCase(
       id: 'corsair-4000d',
       brand: 'Corsair',
@@ -315,7 +316,8 @@ const List<PcCase> kCases = [
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 360,
       maxCoolerHeightMm: 170,
-      fans: CaseFans(front: 1, rear: 1)),
+      fans: CaseFans(front: 1, rear: 1),
+      mounts: CaseFans(front: 3, top: 2, rear: 1)),
   PcCase(
       id: 'nzxt-h5-flow',
       brand: 'NZXT',
@@ -324,7 +326,8 @@ const List<PcCase> kCases = [
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 365,
       maxCoolerHeightMm: 165,
-      fans: CaseFans(front: 1, rear: 1)),
+      fans: CaseFans(front: 1, rear: 1),
+      mounts: CaseFans(front: 3, top: 2, bottom: 2, rear: 1)),
   PcCase(
       id: 'fractal-north',
       brand: 'Fractal Design',
@@ -333,7 +336,8 @@ const List<PcCase> kCases = [
       supportedFormFactors: _allFf,
       maxGpuLengthMm: 355,
       maxCoolerHeightMm: 170,
-      fans: CaseFans(front: 2)),
+      fans: CaseFans(front: 2),
+      mounts: CaseFans(front: 3, top: 2, rear: 1)),
   PcCase(
       id: 'montech-air100',
       brand: 'Montech',
@@ -343,6 +347,7 @@ const List<PcCase> kCases = [
       maxGpuLengthMm: 330,
       maxCoolerHeightMm: 161,
       fans: CaseFans(front: 3, rear: 1),
+      mounts: CaseFans(front: 3, top: 2, bottom: 2, rear: 1),
       rgbFans: true),
   PcCase(
       id: 'cm-nr200p',
@@ -353,7 +358,8 @@ const List<PcCase> kCases = [
       maxGpuLengthMm: 336,
       maxCoolerHeightMm: 155,
       style: CaseStyle.compact,
-      fans: CaseFans(top: 2)),
+      fans: CaseFans(top: 2),
+      mounts: CaseFans(top: 2, bottom: 2, side: 2, rear: 1)),
   PcCase(
       id: 'fractal-terra',
       brand: 'Fractal Design',
@@ -362,7 +368,9 @@ const List<PcCase> kCases = [
       supportedFormFactors: [FormFactor.miniItx],
       maxGpuLengthMm: 322,
       maxCoolerHeightMm: 77,
-      style: CaseStyle.compact),
+      style: CaseStyle.compact,
+      fans: CaseFans(),
+      mounts: CaseFans(bottom: 1)),
 ];
 
 const List<Cooler> kCoolers = [

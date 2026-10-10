@@ -38,7 +38,7 @@ void main() {
       'Cihazım oyunları ve programları kaldırır mı?',
       'Hangisi daha iyi?',
       'Nereden en ucuza alırım?',
-      'Hazır bilgisayar / laptop seç',
+      'Hazır sistem seç',
     ]) {
       expect(find.text(t), findsWidgets, reason: t);
     }

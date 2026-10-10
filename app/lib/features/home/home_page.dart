@@ -10,6 +10,7 @@ import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/profile_action.dart';
 import 'package:darbogaz/features/detect/self_device.dart';
 import 'package:darbogaz/features/device/add_device_sheet.dart';
+import 'package:darbogaz/features/home/home_hero.dart';
 import 'package:darbogaz/features/home/home_sections.dart';
 import 'package:darbogaz/features/home/home_status.dart';
 import 'package:darbogaz/features/watch/pairing_card.dart';
@@ -31,6 +32,8 @@ class HomePage extends ConsumerWidget {
         children: [
           const _PendingAdd(),
           const _SelfPhoneBanner(),
+          const HomeHeroCard(),
+          const SizedBox(height: Space.cardGap),
           const HomeStatusCard(),
           const SizedBox(height: Space.cardGap),
           const HomeAdvisorCard(),

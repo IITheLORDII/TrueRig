@@ -18,6 +18,25 @@ void main() {
     expect(byId('fractal-terra').fans.total, 0);
   });
 
+  test('mounts match the spec sheets and hold the included fans', () {
+    final o11 = byId('lianli-o11-evo').mounts;
+    expect((o11.top, o11.side, o11.bottom, o11.rear), (3, 3, 3, 1));
+    final nr = byId('cm-nr200p').mounts;
+    expect((nr.top, nr.bottom, nr.side, nr.rear), (2, 2, 2, 1));
+    expect(byId('fractal-terra').mounts.bottom, 1);
+    expect(byId('corsair-4000d').mounts.front, 3);
+    for (final c in cases) {
+      final f = c.fans;
+      final m = c.mounts;
+      expect(m.total, greaterThan(0), reason: '${c.id} has no mounts');
+      expect(f.front <= m.front, isTrue, reason: c.id);
+      expect(f.rear <= m.rear, isTrue, reason: c.id);
+      expect(f.top <= m.top, isTrue, reason: c.id);
+      expect(f.bottom <= m.bottom, isTrue, reason: c.id);
+      expect(f.side <= m.side, isTrue, reason: c.id);
+    }
+  });
+
   test('only small cases are drawn as compact', () {
     for (final c in cases) {
       if (c.style == CaseStyle.compact) {

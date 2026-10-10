@@ -152,11 +152,6 @@ class HomeShortcuts extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          item(
-            Icons.laptop_chromebook_rounded,
-            'Hazır bilgisayar / laptop seç',
-            () => context.push('/pick/prebuilt'),
-          ),
           if (isStoreApp)
             item(
               Icons.qr_code_scanner_rounded,

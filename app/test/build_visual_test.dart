@@ -118,7 +118,13 @@ void main() {
       for (final pc in c.byCategory(PartCategory.pcCase).cast<PcCase>()) {
         final s = BuildShape.of(PcBuild(cpu: cpu).withPart(pc));
         final slots = s.fanSlots;
-        expect(slots.length, pc.fans.total, reason: pc.id);
+        final m = pc.mounts;
+        expect(slots.length, m.total - m.side, reason: pc.id);
+        expect(
+          slots.where((f) => f.filled).length,
+          pc.fans.total - pc.fans.side,
+          reason: pc.id,
+        );
         for (final f in slots) {
           expect(f.r, greaterThan(0.05), reason: '${pc.id} fan too small');
           final (along, lo, hi) = switch (f.place) {
@@ -131,8 +137,12 @@ void main() {
         }
       }
       final air = BuildShape.of(withCase('montech-air100')).fanSlots;
-      expect(air.where((f) => f.place == FanPlace.front).length, 3);
-      expect(air.where((f) => f.place == FanPlace.rear).length, 1);
+      int filled(FanPlace p) =>
+          air.where((f) => f.place == p && f.filled).length;
+      expect(filled(FanPlace.front), 3);
+      expect(filled(FanPlace.rear), 1);
+      expect(filled(FanPlace.top), 0);
+      expect(air.where((f) => f.place == FanPlace.top).length, 2);
     });
 
     test('a liquid cooler gets a radiator with one fan per 120 mm', () {
@@ -172,6 +182,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('Terra fansız geliyor'), findsOneWidget);
+      expect(find.textContaining('1 fan takılabilir: 1 alt'), findsOneWidget);
       expect(
         find.textContaining('Soğutucu bu kasaya sığmıyor'),
         findsOneWidget,

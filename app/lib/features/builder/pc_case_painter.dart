@@ -123,14 +123,15 @@ class PcCasePainter extends CustomPainter {
   // -------------------------------------------------------------- fans --
 
   /// Case fans with their plane axes, in the order they are fitted.
-  List<(V3, Offset, Offset, double)> _caseFans() => [
+  List<(V3, Offset, Offset, double)> _caseFans({required bool filled}) => [
     for (final f in shape.fanSlots)
-      (
-        (f.x, f.y, f.z),
-        _ux,
-        f.place == FanPlace.front || f.place == FanPlace.rear ? _uy : _uz,
-        f.r,
-      ),
+      if (f.filled == filled)
+        (
+          (f.x, f.y, f.z),
+          _ux,
+          f.place == FanPlace.front || f.place == FanPlace.rear ? _uy : _uz,
+          f.r,
+        ),
   ];
 
   /// Fan k of n grows into place while the case arrives.
@@ -153,7 +154,11 @@ class PcCasePainter extends CustomPainter {
       _poly([(0, 0, 0), (w, 0, 0), (w, 0, d), (0, 0, d)]),
       Paint()..color = Color.lerp(base, Colors.black, 0.22)!,
     );
-    final fans = _caseFans();
+    // Empty fan places: dashed rings showing where fans can be added.
+    for (final (c, ua, ub, r) in _caseFans(filled: false)) {
+      _dashed(canvas, _ellipse(c, ua, ub, r), colors.ghost);
+    }
+    final fans = _caseFans(filled: true);
     for (var k = 0; k < fans.length; k++) {
       final scale = _fanIn(k, fans.length, caseIn);
       if (scale <= 0) continue;
@@ -294,7 +299,7 @@ class PcCasePainter extends CustomPainter {
       }
     }
     if (!shape.rgbFans) return;
-    for (final (c, ua, ub, r) in _caseFans()) {
+    for (final (c, ua, ub, r) in _caseFans(filled: true)) {
       if (c.$3 > 0.1) continue; // only front fans
       canvas.drawPath(
         _ellipse(c, ua, ub, r * 0.95),
@@ -789,8 +794,12 @@ class PcCasePainter extends CustomPainter {
             (lo.$1, hi.$2, hi.$3),
             (lo.$1, hi.$2, lo.$3),
           ]);
+    _dashed(canvas, path, colors.ghost);
+  }
+
+  void _dashed(Canvas canvas, Path path, Color color) {
     final paint = Paint()
-      ..color = colors.ghost
+      ..color = color
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     for (final m in path.computeMetrics()) {
