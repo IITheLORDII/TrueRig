@@ -13,7 +13,6 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^3.4.3
   go_router: ^18.0.2
-  google_fonts: ^8.0.0
   url_launcher: ^6.3.3
   mobile_scanner: ^7.4.2
   http: ^1.6.0
@@ -26,6 +25,7 @@ dependencies:
   device_info_plus: ^13.3.0
 
 dev_dependencies:
+  crypto: ^3.0.6
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
@@ -34,6 +34,26 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Bundled (OFL 1.1, licenses next to the files): no font download at run
+  # time, so no request to Google with the user's address.
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Inter-ExtraBold.ttf
+          weight: 800
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
 
 # Brand assets are rendered from lib/core/brand/truerig_logo.dart by
 # `flutter test tool/brand_assets_test.dart`, then:

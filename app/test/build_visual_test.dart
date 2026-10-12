@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -26,7 +25,6 @@ PcCasePainter _painter(WidgetTester tester) => tester
     .single;
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
   final c = PartCatalog.seed();
   final cpu = c.byId('r5-5600')! as Cpu;
   final gpu = c.byId('rtx-4090')! as Gpu;

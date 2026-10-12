@@ -43,11 +43,15 @@ flutter run --dart-define=PRICE_API_URL=https://<proje>.supabase.co/functions/v1
 ## Web sürümü ve donanım algılama
 
 ```bash
-cd C:/src/darbogaz/app && flutter build web --release --pwa-strategy=none
+cd C:/src/darbogaz/app && flutter build web --release --pwa-strategy=none --csp --no-web-resources-cdn
 ```
 
 `build/web` statik olarak herhangi bir yerde yayınlanabilir; site `#/detect`
-ekranıyla açılır.
+ekranıyla açılır. `--csp` ve `--no-web-resources-cdn` gerekli: sayfadaki
+içerik güvenlik politikası (CSP) yalnızca kendi sunucumuzdaki kodu çalıştırır.
+`web/_headers` dosyası Netlify / Cloudflare Pages biçiminde güvenlik
+başlıklarını (çerçeveye gömmeyi yasaklama, HSTS vb.) içerir; başka bir
+sunucuda aynı başlıkları elle ekle.
 
 **Tarayıcının verdiği bilgiler (izin istenip okunur):** ekran kartı adı
 (WebGL), mantıksal iş parçacığı sayısı, ekran çözünürlüğü. Tarayıcılar
@@ -68,7 +72,17 @@ Win32_BaseBoard). Sonucu base64url koda çevirir ve siteyi
 supabase db push
 supabase functions deploy price-search
 supabase secrets set BOT_INFO_URL=https://<site>/bot   # botu tanıtan sayfa
+supabase secrets set ALLOWED_ORIGINS=https://<site>     # CORS (virgülle birden çok)
+supabase secrets set RATE_SALT=<uzun rastgele metin>    # IP özetlerinin tuzu
 ```
+
+**Kötüye kullanıma karşı:** istemci başına dakikada 20 istek, önbellekte
+olmayan arama için istemci başına saatte 10, toplamda saatte 200 tarama.
+İstemci, IP'nin tuzlanmış SHA-256 özetiyle tanınır; IP saklanmaz
+(`api_crawls` tablosu). Sunucu yönlendirmeleri elle izler (en fazla 3,
+yalnızca https, aynı site, iç ağ adresi yok). Teklif bağlantıları yalnızca
+mağazanın kendi sitesine ya da bilinen mağazalara gidebilir; uygulama da
+bilinmeyen alan adlarını açmaz (`app/lib/core/net/trusted_hosts.dart`).
 
 ### Fiyat ve görsel toplama (ortaklık yok, herkese açık sayfalar)
 
@@ -96,6 +110,25 @@ PRICE_API_URL=... SUPABASE_ANON_KEY=... node supabase/scripts/warm_images.mts mp
 ```
 
 Testler: `node --test "supabase/functions/price-search/test/*.test.ts"`
+
+## Android sürüm imzası
+
+Sürüm derlemesi `app/android/key.properties` dosyasındaki anahtarla imzalanır
+(git'e girmez). Dosya yoksa derleme uyarı verip debug anahtarı kullanır; o
+APK yayınlanmamalıdır. Bir kez anahtar oluştur ve güvenli bir yerde yedekle:
+
+```bash
+keytool -genkey -v -keystore C:/src/truerig-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias truerig
+```
+
+`app/android/key.properties`:
+
+```properties
+storeFile=C:/src/truerig-release.jks
+storePassword=<şifre>
+keyAlias=truerig
+keyPassword=<şifre>
+```
 
 ## Tahmin modeli
 

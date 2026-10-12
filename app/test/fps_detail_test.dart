@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/providers.dart';
@@ -37,8 +36,6 @@ String _result(WidgetTester tester) => tester
     .firstWhere((s) => RegExp(r'^~\d+$').hasMatch(s));
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   testWidgets('Analiz opens each part\'s own FPS, with back and menu', (
     tester,
   ) async {

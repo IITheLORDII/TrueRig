@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:darbogaz/core/widgets/buttons.dart';
 
@@ -9,8 +8,6 @@ import 'support.dart';
 /// Design rules every main screen must keep: at most one primary button,
 /// tap targets of at least 48 px, and no overflow with large text.
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   const tabs = [
     'Ana Sayfa',
     'Cihazlarım',

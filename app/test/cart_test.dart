@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/features/cart/cart_plan.dart';
@@ -33,8 +32,6 @@ class _ByQuery implements PriceRepository {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   final catalog = PartCatalog.seed();
   final cpu = catalog.byId('r5-5600')!;
   final gpu = catalog.byId('rtx-3060-12')!;

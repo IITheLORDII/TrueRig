@@ -15,6 +15,13 @@
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
+  <!-- Content Security Policy: only our own code runs; network only over
+       https (the engine fetches store images with fetch, so connect-src
+       cannot be narrowed to our own hosts). Build with: flutter build web --csp --no-web-resources-cdn
+       If the inline splash script changes, update its sha256 here
+       (test/web_security_test.dart checks it). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-LEIgqV9+9hWnNcFZ7vYClnAB0Fj6CI1idm4CgGmnQ5g=' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="TrueRig — PC, telefon ve akıllı saat için uyumluluk, darboğaz, FPS ve fiyat.">
 

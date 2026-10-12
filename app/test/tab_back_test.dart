@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'support.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   bool onHome(WidgetTester tester) =>
       find.text('Ne öğrenmek istersin?'.toUpperCase()).evaluate().isNotEmpty ||
       find.textContaining('RENMEK').evaluate().isNotEmpty;

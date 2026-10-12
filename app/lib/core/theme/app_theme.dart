@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:darbogaz/core/brand/truerig_logo.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -106,10 +105,15 @@ const LinearGradient kBrandGradient = LinearGradient(
   colors: [kBrandCyan, kBrandViolet],
 );
 
+/// Bundled font families (see pubspec.yaml).
+const String kUiFont = 'Inter';
+const String kMonoFont = 'JetBrainsMono';
+
 /// Monospace style for numbers (FPS, %, W, prices): tabular figures so
 /// columns line up.
 TextStyle numberStyle(BuildContext context, {double size = 16, Color? color}) =>
-    GoogleFonts.jetBrainsMono(
+    TextStyle(
+      fontFamily: kMonoFont,
       fontSize: size,
       fontWeight: FontWeight.w700,
       color: color ?? Theme.of(context).colorScheme.onSurface,
@@ -159,7 +163,7 @@ class AppTheme {
   /// Type scale (Material 3, Inter): page 24 · section 20 · card title 16
   /// · body 14 · secondary 13 · label 12. Nothing below 12.
   static TextTheme _text(Brightness b) {
-    final base = GoogleFonts.interTextTheme(ThemeData(brightness: b).textTheme);
+    final base = ThemeData(brightness: b).textTheme.apply(fontFamily: kUiFont);
     TextStyle? w(TextStyle? s, double size, FontWeight weight, double height) =>
         s?.copyWith(fontSize: size, fontWeight: weight, height: height / size);
     return base.copyWith(

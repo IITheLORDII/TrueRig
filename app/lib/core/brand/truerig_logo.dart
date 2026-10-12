@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Brand colours (also used for launcher icons and the native splash).
 const Color kBrandCyan = Color(0xFF00E5FF);
@@ -149,7 +148,8 @@ class TrueRigWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = GoogleFonts.inter(
+    final style = TextStyle(
+      fontFamily: 'Inter',
       fontSize: fontSize,
       fontWeight: FontWeight.w800,
       letterSpacing: -0.3,

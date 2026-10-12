@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:darbogaz/app.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
@@ -10,8 +9,6 @@ import 'package:darbogaz/features/detect/self_device.dart';
 import 'support.dart';
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   testWidgets('splash shows the brand, then opens Ana Sayfa', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

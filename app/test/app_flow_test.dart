@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/devices.dart';
@@ -26,8 +25,6 @@ class _SeededBuild extends BuildController {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   testWidgets('home shows devices, three questions and more', (tester) async {
     await pumpApp(tester);
     expect(find.text('Cihazların'), findsOneWidget);

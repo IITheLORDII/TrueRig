@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
@@ -10,8 +9,6 @@ import 'package:darbogaz/core/widgets/app_controls.dart';
 /// The app has one design: these controls must render identically on iOS and
 /// Android.
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
   Future<void> pumpOn(
     WidgetTester tester,
     TargetPlatform platform,
