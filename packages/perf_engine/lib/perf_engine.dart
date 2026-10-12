@@ -12,6 +12,7 @@ export 'src/data/workload_catalog.dart';
 export 'src/detect/hardware_matcher.dart';
 export 'src/detect/hardware_report.dart';
 export 'src/detect/spec_text_parser.dart';
+export 'src/fps/fps_breakdown.dart';
 export 'src/fps/fps_estimator.dart';
 export 'src/fps/game_profile.dart';
 export 'src/llm/llm_estimator.dart';

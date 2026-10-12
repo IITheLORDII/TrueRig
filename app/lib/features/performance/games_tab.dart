@@ -7,6 +7,7 @@ import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/verdicts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/widgets/term_info.dart';
@@ -57,7 +58,11 @@ class GamesTab extends ConsumerWidget {
         const AnalysisSettingsBar(),
         const SizedBox(height: 12),
         if (selected != null) ...[
-          GameBottleneckCard(estimate: selected),
+          GameBottleneckCard(
+            estimate: selected,
+            onDetail: () =>
+                context.push('/analysis/detail?game=${selected.game.id}'),
+          ),
           const SizedBox(height: 8),
         ],
         SectionCard(

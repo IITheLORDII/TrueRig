@@ -92,17 +92,11 @@ class FpsEstimator {
     GraphicsPreset preset = GraphicsPreset.ultra,
   }) {
     final cpuCap = cpuCapFps(game, cpu, ram, preset);
-    final vramNeed =
-        (game.vramNeedGb[resolution] ?? 8) * _vramPresetScale[preset]!;
+    final vramNeed = vramNeedGb(game, resolution, preset);
     final shortfall = math.max(0.0, vramNeed - gpu.vramGb);
     final gpuCap = _gpuCapFps(game, gpu, resolution, preset, vramNeed);
 
-    var avg = math
-        .pow(
-          math.pow(cpuCap, -_softMinK) + math.pow(gpuCap, -_softMinK),
-          -1 / _softMinK,
-        )
-        .toDouble();
+    var avg = blend(cpuCap, gpuCap);
     final cap = game.engineFpsCap;
     if (cap != null) avg = math.min(avg, cap);
 
@@ -173,19 +167,41 @@ class FpsEstimator {
     Resolution res,
     GraphicsPreset preset,
     double vramNeed,
+  ) =>
+      gpuRawFps(game, gpu, res, preset) * vramFactor(gpu, vramNeed);
+
+  /// What the graphics card could draw with enough memory.
+  double gpuRawFps(
+    GameProfile game,
+    Gpu gpu,
+    Resolution res,
+    GraphicsPreset preset,
   ) {
     final ref = game.gpuRefFps[res] ?? game.gpuRefFps.values.first;
-    var fps = ref * (gpu.rasterScore / 100) * _gpuPresetGain[preset]!;
-    if (gpu.vramGb < vramNeed) {
-      // Overflowing VRAM streams textures over PCIe: average FPS drops
-      // moderately (stutter is the bigger effect, flagged separately).
-      fps *= math.max(
-        _minVramFactor,
-        math.pow(gpu.vramGb / vramNeed, _vramPenaltyExp).toDouble(),
-      );
-    }
-    return fps;
+    return ref * (gpu.rasterScore / 100) * _gpuPresetGain[preset]!;
   }
+
+  /// Video memory the game needs at this resolution and setting (GB).
+  double vramNeedGb(GameProfile game, Resolution res, GraphicsPreset preset) =>
+      (game.vramNeedGb[res] ?? 8) * _vramPresetScale[preset]!;
+
+  /// Overflowing VRAM streams textures over PCIe: average FPS drops
+  /// moderately (stutter is the bigger effect, flagged separately).
+  static double vramFactor(Gpu gpu, double vramNeed) {
+    if (gpu.vramGb >= vramNeed) return 1;
+    return math.max(
+      _minVramFactor,
+      math.pow(gpu.vramGb / vramNeed, _vramPenaltyExp).toDouble(),
+    );
+  }
+
+  /// Soft minimum of the CPU and GPU limits: the frame rate you get.
+  static double blend(double cpuCap, double gpuCap) => math
+      .pow(
+        math.pow(cpuCap, -_softMinK) + math.pow(gpuCap, -_softMinK),
+        -1 / _softMinK,
+      )
+      .toDouble();
 
   Confidence _confidence(GameProfile game, double shortfall) {
     if (game.isProjection) return Confidence.low;

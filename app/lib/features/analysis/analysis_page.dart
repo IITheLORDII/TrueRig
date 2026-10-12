@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:darbogaz/core/widgets/explain.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:perf_engine/perf_engine.dart';
 
 import 'package:darbogaz/core/devices.dart';
@@ -16,6 +17,7 @@ import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
 import 'package:darbogaz/core/widgets/bottleneck_gauge.dart';
+import 'package:darbogaz/core/widgets/buttons.dart';
 import 'package:darbogaz/core/widgets/common.dart';
 import 'package:darbogaz/core/widgets/flow.dart';
 import 'package:darbogaz/core/widgets/score_scale.dart';
@@ -62,7 +64,10 @@ class PcSummaryView extends ConsumerWidget {
           const SizedBox(height: Space.l),
           PlainVerdictCard(verdict: pcVerdict(general)),
           const SizedBox(height: Space.cardGap),
-          GeneralBottleneckCard(general: general),
+          GeneralBottleneckCard(
+            general: general,
+            onDetail: () => context.push('/analysis/detail'),
+          ),
           const SizedBox(height: Space.cardGap),
           const UpgradeCard(),
           const SizedBox(height: Space.cardGap),
@@ -77,9 +82,16 @@ class PcSummaryView extends ConsumerWidget {
 
 /// General bottleneck of a system (gauge, zone scale, average caps).
 class GeneralBottleneckCard extends StatelessWidget {
-  const GeneralBottleneckCard({super.key, required this.general});
+  const GeneralBottleneckCard({
+    super.key,
+    required this.general,
+    this.onDetail,
+  });
 
   final SystemBottleneck general;
+
+  /// Opens "Detaylı inceleme" (each part's own FPS).
+  final VoidCallback? onDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +158,10 @@ class GeneralBottleneckCard extends StatelessWidget {
               ],
             ),
           ),
+          if (onDetail != null) ...[
+            const SizedBox(height: Space.m),
+            _DetailButton(onTap: onDetail!),
+          ],
         ],
       ),
     );
@@ -196,9 +212,12 @@ class ResolutionBottleneckCard extends StatelessWidget {
 
 /// Bottleneck for one game (lives in the "Oyun" section).
 class GameBottleneckCard extends StatelessWidget {
-  const GameBottleneckCard({super.key, required this.estimate});
+  const GameBottleneckCard({super.key, required this.estimate, this.onDetail});
 
   final FpsEstimate estimate;
+
+  /// Opens "Detaylı inceleme" for this game.
+  final VoidCallback? onDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -262,8 +281,27 @@ class GameBottleneckCard extends StatelessWidget {
                 tone: Tone.warn,
               ),
             ),
+          if (onDetail != null) ...[
+            const SizedBox(height: Space.m),
+            _DetailButton(onTap: onDetail!),
+          ],
         ],
       ),
     );
   }
+}
+
+/// "Detaylı incele": opens each part's own FPS.
+class _DetailButton extends StatelessWidget {
+  const _DetailButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => SecondaryButton(
+    expand: true,
+    icon: Icons.query_stats_rounded,
+    label: 'Detaylı incele: parça parça FPS',
+    onPressed: onTap,
+  );
 }

@@ -4,6 +4,7 @@ import 'package:perf_engine/perf_engine.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:darbogaz/features/advisor/advisor_page.dart';
+import 'package:darbogaz/features/analysis/fps_detail_page.dart';
 import 'package:darbogaz/core/router/tab_back.dart';
 import 'package:darbogaz/features/cart/cart_page.dart';
 import 'package:darbogaz/features/onboarding/onboarding_page.dart';
@@ -76,6 +77,13 @@ GoRouter createRouter() => GoRouter(
     _page('/pick/watch', (s) => WatchPickerPage(returnMode: _returns(s))),
     _page('/pick/prebuilt', (s) => PrebuiltPickerPage(returnMode: _returns(s))),
     _page('/advisor', (_) => const AdvisorPage()),
+    _page(
+      '/analysis/detail',
+      (s) => FpsDetailPage(
+        gameId: s.uri.queryParameters['game'],
+        fromSandbox: s.uri.queryParameters['src'] == 'sandbox',
+      ),
+    ),
     _page(
       '/cart',
       (s) => CartPage(fromSandbox: s.uri.queryParameters['src'] == 'sandbox'),

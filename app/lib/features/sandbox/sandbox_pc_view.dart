@@ -180,7 +180,10 @@ class _SandboxPcResultsState extends State<SandboxPcResults> {
         const SizedBox(height: Space.s),
         PlainVerdictCard(verdict: pcVerdict(general)),
         const SizedBox(height: Space.s),
-        GeneralBottleneckCard(general: general),
+        GeneralBottleneckCard(
+          general: general,
+          onDetail: () => context.push('/analysis/detail?src=sandbox'),
+        ),
         const SizedBox(height: Space.s),
         ResolutionBottleneckCard(rows: rows),
         const SizedBox(height: Space.s),
