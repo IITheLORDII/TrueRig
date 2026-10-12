@@ -24,11 +24,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
-      - uses: dart-lang/setup-dart@v1
+      - uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1
       - name: Catalog items
         working-directory: packages/perf_engine
         run: |
@@ -40,16 +40,24 @@ jobs:
           git show origin/prices-data:prices.json > "$RUNNER_TEMP/previous.json" 2>/dev/null \
             || echo '{}' > "$RUNNER_TEMP/previous.json"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
       - name: Crawl
+        # The input reaches the shell only through an environment variable
+        # and must be a plain number (no script injection).
+        env:
+          LIMIT: ${{ github.event.inputs.limit || '300' }}
         run: |
+          case "$LIMIT" in
+            ''|*[!0-9]*) echo "limit must be a number" >&2; exit 1 ;;
+          esac
+          if [ "$LIMIT" -gt 2000 ]; then echo "limit too large" >&2; exit 1; fi
           node --experimental-strip-types tool/price-index/run.ts \
             --items "$RUNNER_TEMP/items.json" \
             --previous "$RUNNER_TEMP/previous.json" \
             --out "$RUNNER_TEMP/prices.json" \
-            --limit "${{ github.event.inputs.limit || '300' }}"
+            --limit "$LIMIT"
 
       - name: Publish
         run: |
