@@ -14,11 +14,13 @@ import 'package:darbogaz/features/prices/store_list.dart';
 
 import 'support.dart';
 
+const _domains = {'mediamarkt': 'mediamarkt.com.tr'};
+
 Map<String, Object?> _offer(String store, double price, String title) => {
   'store': store,
   'price': price,
   'currency': 'TRY',
-  'url': 'https://www.$store.com/p',
+  'url': 'https://www.${_domains[store] ?? '$store.com'}/p',
   'in_stock': true,
   'rating': 4.5,
   'review_count': 12,
@@ -79,6 +81,33 @@ void main() {
   });
 
   group('IndexPriceRepository', () {
+    test('refuses an index larger than the size limit', () async {
+      final huge = 'x' * (kMaxIndexBytes + 1);
+      final repo = IndexPriceRepository(
+        client: MockClient((_) async => http.Response(huge, 200)),
+        url: 'https://example.com/prices.json',
+      );
+      expect(repo.load(), throwsA(isA<PriceApiException>()));
+    });
+
+    test('drops index offers on other domains', () {
+      final data = PriceIndexData.fromJson({
+        'items': {
+          'rtx-4060': {
+            'name': 'RTX 4060',
+            'offers': [
+              _offer('itopya', 13499, 'ok'),
+              {
+                ..._offer('itopya', 9999, 'fake'),
+                'url': 'https://itopya.example/p',
+              },
+            ],
+          },
+        },
+      });
+      expect(data.items.single.offers.map((o) => o.price), [13499]);
+    });
+
     test('downloads once and returns offers or an estimate', () async {
       var calls = 0;
       final repo = IndexPriceRepository(

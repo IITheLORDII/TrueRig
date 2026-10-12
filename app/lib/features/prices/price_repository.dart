@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:darbogaz/core/net/trusted_hosts.dart';
+
 /// Max query length accepted from the user / scanner.
 const int kMaxQueryLength = 100;
 
@@ -210,17 +212,16 @@ class RemotePriceRepository implements PriceRepository {
     if (res.statusCode != 200) {
       throw PriceApiException('Fiyat servisi hata döndü: ${res.statusCode}');
     }
-    final body = jsonDecode(res.body);
+    // Decode as UTF-8 whatever the header says (store names are Turkish).
+    final body = jsonDecode(utf8.decode(res.bodyBytes));
     if (body is! Map<String, dynamic> || body['data'] is! List) {
       throw const PriceApiException('Beklenmeyen yanıt biçimi');
     }
-    final offers =
-        (body['data'] as List)
-            .whereType<Map<String, dynamic>>()
-            .map(PriceOffer.fromJson)
-            .where((o) => o.url.scheme == 'https')
-            .toList()
-          ..sort((a, b) => a.price.compareTo(b.price));
+    final offers = [
+      for (final row
+          in (body['data'] as List).whereType<Map<String, dynamic>>())
+        ?tryParseOffer(row),
+    ]..sort((a, b) => a.price.compareTo(b.price));
     final meta = body['meta'];
     return PriceSearchResult(
       offers: List.unmodifiable(offers),
@@ -232,6 +233,27 @@ class RemotePriceRepository implements PriceRepository {
           : null,
     );
   }
+}
+
+/// Highest price accepted from outside data (anything above is junk).
+const double kMaxPrice = 10000000;
+
+/// An offer from outside data, or null when the row is malformed, the
+/// price is not plausible, or the page is not on a trusted store domain
+/// (a tampered offer must never send people to a look-alike site).
+PriceOffer? tryParseOffer(Map<String, dynamic> row) {
+  final PriceOffer offer;
+  try {
+    offer = PriceOffer.fromJson(row);
+  } on TypeError {
+    return null;
+  } on FormatException {
+    return null;
+  }
+  if (!isTrustedStoreUrl(offer.url)) return null;
+  if (!(offer.price > 0 && offer.price < kMaxPrice)) return null;
+  if (!RegExp(r'^[A-Z]{3}$').hasMatch(offer.currency)) return null;
+  return offer;
 }
 
 /// Parses [value] as an https URL; anything else (http, junk) yields null.

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:darbogaz/core/images/part_images.dart';
+import 'package:darbogaz/core/net/trusted_hosts.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
 import 'package:darbogaz/core/widgets/app_controls.dart';
@@ -428,6 +429,14 @@ class _StoreTile extends StatelessWidget {
 }
 
 Future<void> openStoreUrl(BuildContext context, Uri url) async {
+  if (!isTrustedStoreUrl(url)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Bu bağlantı tanıdığımız bir mağazaya ait değil.'),
+      ),
+    );
+    return;
+  }
   final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
   if (!ok && context.mounted) {
     ScaffoldMessenger.of(context)

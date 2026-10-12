@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:darbogaz/core/widgets/page_nav.dart';
 import 'package:darbogaz/core/brand/truerig_logo.dart';
+import 'package:darbogaz/core/net/trusted_hosts.dart';
 import 'package:darbogaz/core/providers.dart';
 import 'package:darbogaz/core/theme/app_theme.dart';
 import 'package:darbogaz/core/theme/tokens.dart';
@@ -219,6 +220,7 @@ class _CartPageState extends ConsumerState<CartPage> {
 /// Opens every product page of a store basket; false when one fails.
 Future<bool> openBasket(StoreBasket basket) async {
   for (final i in basket.items) {
+    if (!isTrustedStoreUrl(i.offer.url)) return false;
     final ok = await launchUrl(
       i.offer.url,
       mode: LaunchMode.externalApplication,

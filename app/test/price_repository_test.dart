@@ -52,14 +52,14 @@ void main() {
               {
                 'store': 'B',
                 'price': 90000,
-                'url': 'https://b.example/x',
+                'url': 'https://www.vatanbilgisayar.com/x',
                 'fetched_at': '2026-10-07T10:00:00Z',
               },
               {
                 'store': 'A',
                 'price': 85000,
                 'currency': 'TRY',
-                'url': 'https://a.example/x',
+                'url': 'https://www.itopya.com/x',
                 'in_stock': false,
                 'fetched_at': '2026-10-07T10:00:00Z',
               },
@@ -78,6 +78,43 @@ void main() {
       expect(result.offers.first.inStock, isFalse);
       expect(result.imageUrl, Uri.parse('https://cdn.example/img.jpg'));
       expect(result.imageSource, isNull);
+    });
+
+    test('drops offers on other domains and rows that do not parse', () async {
+      final client = MockClient(
+        (_) async => http.Response.bytes(
+          utf8.encode(
+            jsonEncode({
+              'success': true,
+              'data': [
+                {
+                  'store': 'Fake',
+                  'price': 100,
+                  'url': 'https://itopya.com.evil.example/x',
+                  'fetched_at': '2026-10-07T10:00:00Z',
+                },
+                {'store': 'Broken', 'price': 'free', 'url': 42},
+                {
+                  'store': 'İtopya',
+                  'price': 13499,
+                  'url': 'https://www.itopya.com/x',
+                  'fetched_at': '2026-10-07T10:00:00Z',
+                },
+                {
+                  'store': 'Absurd',
+                  'price': -5,
+                  'url': 'https://www.itopya.com/y',
+                  'fetched_at': '2026-10-07T10:00:00Z',
+                },
+              ],
+            }),
+          ),
+          200,
+        ),
+      );
+      final repo = RemotePriceRepository(client: client, baseUrl: base);
+      final result = await repo.search('rtx 4060');
+      expect(result.offers.map((o) => o.store), ['İtopya']);
     });
 
     test('non-200 throws PriceApiException', () async {

@@ -8,6 +8,9 @@ import 'package:darbogaz/features/prices/price_repository.dart';
 
 /// Daily price index published by the `Price index` GitHub workflow
 /// (tool/price-index). Override with `--dart-define=PRICE_INDEX_URL=...`.
+/// Largest price index accepted (today's is well under 1 MB).
+const int kMaxIndexBytes = 5 * 1024 * 1024;
+
 const String kPriceIndexUrl = String.fromEnvironment(
   'PRICE_INDEX_URL',
   defaultValue: 'https://raw.githubusercontent.com/IITheLORDII/TrueRig/prices-data/prices.json',
@@ -76,13 +79,9 @@ class PriceIndexData {
   }
 
   static PriceOffer? _offer(Map<String, dynamic> o) {
-    try {
-      final offer = PriceOffer.fromJson(o);
-      return offer.url.scheme == 'https' ? offer : null;
-    } on Object catch (e) {
-      debugPrint('Fiyat indeksinde geçersiz teklif atlandı: $e');
-      return null;
-    }
+    final offer = tryParseOffer(o);
+    if (offer == null) debugPrint('Fiyat indeksinde geçersiz teklif atlandı');
+    return offer;
   }
 
   /// The item a query names: exact name / MPN first, then the item whose
@@ -151,6 +150,9 @@ class IndexPriceRepository implements PriceRepository {
     }
     if (res.statusCode != 200) {
       throw PriceApiException('Fiyat listesi alınamadı: ${res.statusCode}');
+    }
+    if (res.bodyBytes.length > kMaxIndexBytes) {
+      throw const PriceApiException('Fiyat listesi beklenenden büyük');
     }
     final body = jsonDecode(utf8.decode(res.bodyBytes));
     if (body is! Map<String, dynamic>) {
