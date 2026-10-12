@@ -4,6 +4,7 @@
 // Network goes through PoliteFetcher (robots, Crawl-delay, backoff).
 
 import { extractPageData } from "../../supabase/functions/price-search/public/jsonld.ts";
+import { sameSite } from "../../supabase/functions/price-search/public/url_safety.ts";
 import type { PoliteFetcher } from "../../supabase/functions/price-search/public/polite_fetch.ts";
 import { type IndexStore, parseSitemap } from "./sitemap.ts";
 import { matchScore, type PriceItem, SlugIndex } from "./slug_match.ts";
@@ -179,7 +180,8 @@ export function offerFrom(
       store,
       price: p.price,
       currency: (p.currency ?? "TRY").toUpperCase().slice(0, 3),
-      url: p.url?.startsWith("https://") ? p.url : url,
+      // Only the store's own pages; anything else falls back to the page read.
+      url: p.url?.startsWith("https://") && sameSite(p.url, url) ? p.url : url,
       in_stock: p.inStock,
       rating: p.rating,
       review_count: p.reviewCount,

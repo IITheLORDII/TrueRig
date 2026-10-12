@@ -5,6 +5,7 @@ import { extractPageData, type PageProduct } from "./jsonld.ts";
 import { matchKind } from "./match.ts";
 import type { PoliteFetcher } from "./polite_fetch.ts";
 import type { StoreConfig } from "./stores.ts";
+import { isTrustedStoreUrl, sameSite } from "./url_safety.ts";
 
 export interface Offer {
   store: string;
@@ -55,21 +56,27 @@ async function collectStore(
     return { offers: [], image: null, skipped: [{ store: store.name, reason: first.kind }] };
   }
   const page = extractPageData(first.html, searchUrl);
-  let products = page.products.filter((p) => matchKind(p, query) !== "none");
+  // Each product with the (same-site) page it was read from.
+  let found: Array<{ p: PageProduct; page: string }> = page.products
+    .filter((p) => matchKind(p, query) !== "none")
+    .map((p) => ({ p, page: searchUrl }));
 
-  if (!products.some((p) => p.price !== null)) {
+  if (!found.some((f) => f.p.price !== null)) {
     for (const url of productLinks(page.listedUrls, first.html, searchUrl, store, query)) {
       const res = await fetcher.get(url);
       if (res.kind !== "ok") continue;
-      products = products.concat(
-        extractPageData(res.html, url).products.filter((p) => matchKind(p, query) !== "none"),
+      found = found.concat(
+        extractPageData(res.html, url).products
+          .filter((p) => matchKind(p, query) !== "none")
+          .map((p) => ({ p, page: url })),
       );
     }
   }
 
+  const products = found.map((f) => f.p);
   return {
-    offers: dedupe(products.flatMap((p) => toOffers(store.name, p))),
-    image: imageFrom(store.name, products, query),
+    offers: dedupe(found.flatMap((f) => toOffers(store, f.p, f.page))),
+    image: imageFrom(store, products, query),
     skipped: [],
   };
 }
@@ -106,33 +113,44 @@ const EMPTY_PRODUCT: PageProduct = {
   reviewCount: null, sellerOffers: [],
 };
 
-/** Aggregator pages yield one offer per seller; shops yield their own. */
-function toOffers(store: string, p: PageProduct): Offer[] {
+/**
+ * Aggregator pages yield one offer per seller; shops yield their own.
+ * Offer links must stay on the store's own site or a trusted store; any
+ * other link is replaced by the page the offer was read from, so a crafted
+ * page can never send people to a look-alike site.
+ */
+function toOffers(store: StoreConfig, p: PageProduct, page: string): Offer[] {
   const currency = (p.currency ?? "TRY").toUpperCase().slice(0, 3);
+  const safe = (u: string | null) =>
+    u && u.startsWith("https://") && (sameSite(u, store.origin) || isTrustedStoreUrl(u))
+      ? u
+      : page;
   if (p.sellerOffers.length > 0) {
-    return p.sellerOffers
-      .filter((o) => o.url.startsWith("https://"))
-      .map((o) => ({
-        store: o.seller, price: o.price, currency, url: o.url, in_stock: o.inStock,
-        rating: p.rating, review_count: p.reviewCount,
-      }));
+    return p.sellerOffers.map((o) => ({
+      store: o.seller, price: o.price, currency, url: safe(o.url), in_stock: o.inStock,
+      rating: p.rating, review_count: p.reviewCount,
+    }));
   }
-  if (p.price === null || p.price <= 0 || !p.url?.startsWith("https://")) return [];
+  if (p.price === null || p.price <= 0) return [];
   return [{
-    store, price: p.price, currency, url: p.url, in_stock: p.inStock,
+    store: store.name, price: p.price, currency, url: safe(p.url), in_stock: p.inStock,
     rating: p.rating, review_count: p.reviewCount,
   }];
 }
 
 function dedupe(offers: Offer[]): Offer[] {
   const seen = new Set<string>();
-  return offers.filter((o) => (seen.has(o.url) ? false : (seen.add(o.url), true)));
+  // Seller + link: several sellers may share the aggregator page link.
+  const key = (o: Offer) => `${o.store}|${o.url}`;
+  return offers.filter((o) => (seen.has(key(o)) ? false : (seen.add(key(o)), true)));
 }
 
-function imageFrom(store: string, products: PageProduct[], query: string): ImageHit | null {
+function imageFrom(store: StoreConfig, products: PageProduct[], query: string): ImageHit | null {
   for (const p of products) {
-    if (p.imageUrl && matchKind(p, query) === "identifier") {
-      return { url: p.imageUrl, sourceUrl: p.url ?? "", store };
+    if (p.imageUrl?.startsWith("https://") && matchKind(p, query) === "identifier") {
+      // The source link is shown in the app: only the store's own pages.
+      const source = p.url && sameSite(p.url, store.origin) ? p.url : store.origin;
+      return { url: p.imageUrl, sourceUrl: source, store: store.name };
     }
   }
   return null;

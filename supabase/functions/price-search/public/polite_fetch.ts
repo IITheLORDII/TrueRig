@@ -2,10 +2,14 @@
 // - obeys robots.txt (cached per origin) and Crawl-delay,
 // - identifies itself honestly (no browser impersonation),
 // - spaces requests per host and respects a shared hourly budget,
-// - backs off from a host after 403/429/503 instead of retrying around it.
+// - backs off from a host after 403/429/503 instead of retrying around it,
+// - follows at most 3 redirects, each over https, on the same site, not to an
+//   internal address and allowed by robots.txt (no request forgery),
+// - reads at most MAX_BODY_BYTES of a response.
 // I/O is injected so the logic is testable without network.
 
 import { isAllowed, type RobotsRules, rulesForStatus } from "./robots.ts";
+import { isPrivateHost, sameSite } from "./url_safety.ts";
 
 export const BOT_TOKEN = "TrueRigBot";
 
@@ -25,6 +29,7 @@ export type FetchOutcome =
   | { kind: "blocked-by-robots" }
   | { kind: "over-budget" }
   | { kind: "backing-off" }
+  | { kind: "redirect-refused" }
   | { kind: "http-error"; status: number }
   | { kind: "network-error"; message: string };
 
@@ -35,6 +40,7 @@ const BACKOFF_MS = 6 * 3600_000;
 const TIMEOUT_MS = 8000;
 const MAX_BODY_BYTES = 3_000_000;
 const BACKOFF_STATUSES = new Set([403, 429, 503]);
+const MAX_REDIRECTS = 3;
 
 export class PoliteFetcher {
   private readonly robots = new Map<string, { rules: RobotsRules; at: number }>();
@@ -49,6 +55,7 @@ export class PoliteFetcher {
   async get(url: string): Promise<FetchOutcome> {
     const u = new URL(url);
     if (u.protocol !== "https:") return { kind: "http-error", status: 0 };
+    if (isPrivateHost(u.hostname)) return { kind: "redirect-refused" };
     const host = u.host;
 
     if ((this.backoffUntil.get(host) ?? 0) > this.deps.now()) {
@@ -94,25 +101,84 @@ export class PoliteFetcher {
   }
 
   private async request(url: string, host: string): Promise<FetchOutcome> {
+    let current = url;
     try {
-      const res = await this.deps.fetch(url, {
-        headers: {
-          "User-Agent": this.deps.userAgent,
-          "Accept": "text/html,application/xhtml+xml",
-          "Accept-Language": "tr-TR,tr;q=0.9",
-        },
-        redirect: "follow",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      if (BACKOFF_STATUSES.has(res.status)) {
-        this.backoffUntil.set(host, this.deps.now() + BACKOFF_MS);
-        return { kind: "http-error", status: res.status };
+      for (let hop = 0; ; hop++) {
+        const res = await this.deps.fetch(current, {
+          headers: {
+            "User-Agent": this.deps.userAgent,
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "tr-TR,tr;q=0.9",
+          },
+          redirect: "manual",
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+        if (res.status >= 300 && res.status < 400) {
+          const next = await this.nextHop(res, current, url, hop);
+          if (typeof next !== "string") return next;
+          current = next;
+          continue;
+        }
+        if (BACKOFF_STATUSES.has(res.status)) {
+          this.backoffUntil.set(host, this.deps.now() + BACKOFF_MS);
+          return { kind: "http-error", status: res.status };
+        }
+        if (!res.ok) return { kind: "http-error", status: res.status };
+        return { kind: "ok", html: await readCapped(res, MAX_BODY_BYTES) };
       }
-      if (!res.ok) return { kind: "http-error", status: res.status };
-      const html = await res.text();
-      return { kind: "ok", html: html.slice(0, MAX_BODY_BYTES) };
     } catch (e) {
       return { kind: "network-error", message: String(e) };
     }
   }
+
+  /** The next URL of a redirect, or why it is refused. */
+  private async nextHop(
+    res: Response,
+    current: string,
+    start: string,
+    hop: number,
+  ): Promise<string | FetchOutcome> {
+    const location = res.headers.get("location");
+    if (!location || hop >= MAX_REDIRECTS) return { kind: "redirect-refused" };
+    let next: URL;
+    try {
+      next = new URL(location, current);
+    } catch {
+      return { kind: "redirect-refused" };
+    }
+    if (
+      next.protocol !== "https:" ||
+      isPrivateHost(next.hostname) ||
+      !sameSite(next.href, start)
+    ) {
+      return { kind: "redirect-refused" };
+    }
+    const rules = await this.rulesFor(next.origin);
+    if (!isAllowed(rules, next.pathname + next.search)) return { kind: "blocked-by-robots" };
+    return next.href;
+  }
+}
+
+/** Reads a body as text, stopping after [max] bytes. */
+async function readCapped(res: Response, max: number): Promise<string> {
+  if (!res.body) return "";
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  while (size < max) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    size += value.byteLength;
+  }
+  if (size >= max) await reader.cancel();
+  const all = new Uint8Array(Math.min(size, max));
+  let at = 0;
+  for (const c of chunks) {
+    const part = c.subarray(0, Math.min(c.byteLength, all.length - at));
+    all.set(part, at);
+    at += part.byteLength;
+    if (at >= all.length) break;
+  }
+  return new TextDecoder().decode(all);
 }
